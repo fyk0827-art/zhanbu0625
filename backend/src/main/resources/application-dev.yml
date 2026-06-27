@@ -1,0 +1,21 @@
+server:
+  port: 8893
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/0625zhanbudev?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: 0625zhanbudev
+    password: 0625zhanbudev
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+payment:
+  mode: paypal
+  order-amount: 2990
+  frontend-url: https://dev.divinlove.com
+  base-url: https://dev.divinlove.com
+  paypal:
+    client-id: AfXm2ti4T23Ys-DglNzOIIjEPFV9FUM6IjwOyBXyasNK6p2jyn8b7qyyrthuefIzub3Z4AQ5aEuqcWWK
+    secret: EERPl40QbcPqhwgt4YsqKPO6qdlHyP_jOeXY2ev0IRqO7LQxgbdxWiKPktRboI_A5R4Jl-zF0dldJUTW
+    mode: sandbox

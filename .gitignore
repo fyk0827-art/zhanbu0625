@@ -1,0 +1,10 @@
+node_modules/
+dist/
+target/
+.idea/
+*.iml
+.DS_Store
+*.log
+application-local.yml
+.env
+.playwright-mcp/

@@ -1,0 +1,283 @@
+/* Planet character showcase — generator homepage */
+.pc-section {
+  --pc-gold: #e8c27e;
+  --pc-cream: #f5f0e8;
+  width: 100%;
+  margin-top: 48px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(232, 194, 126, 0.12);
+}
+
+.pc-header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding: 0 4px;
+}
+
+.pc-eyebrow {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgba(232, 194, 126, 0.45);
+  font-family: "Cinzel", "Times New Roman", serif;
+}
+
+.pc-title {
+  margin: 0 0 10px;
+  font-family: "Noto Serif SC", "PingFang SC", serif;
+  font-size: clamp(22px, 5.5vw, 28px);
+  font-weight: 700;
+  letter-spacing: 6px;
+  background: linear-gradient(180deg, #e8c27e 0%, #b38741 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.pc-subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 1px;
+  color: rgba(245, 240, 232, 0.42);
+}
+
+.pc-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.pc-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--pc-accent) 8%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pc-card:hover {
+  border-color: color-mix(in srgb, var(--pc-accent) 35%, transparent);
+  box-shadow:
+    0 0 32px color-mix(in srgb, var(--pc-accent) 14%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pc-card-visual {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in srgb, var(--pc-accent) 18%, #111) 0%,
+    #0a0a0a 100%
+  );
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.pc-card-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.pc-card-body {
+  min-width: 0;
+  text-align: left;
+}
+
+.pc-card-name {
+  margin: 0 0 4px;
+  font-family: "Noto Serif SC", serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--pc-cream);
+}
+
+.pc-card-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.75;
+  letter-spacing: 0.3px;
+  color: rgba(245, 240, 232, 0.48);
+}
+
+/* ── Sun hero footer ── */
+.pc-sun-hero {
+  position: relative;
+  margin-top: 32px;
+  margin-left: -20px;
+  margin-right: -20px;
+  padding: 36px 20px 40px;
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(232, 185, 81, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 0%, rgba(232, 194, 126, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(20, 16, 8, 0.95) 0%, #000 100%);
+  border-top: 1px solid rgba(232, 194, 126, 0.2);
+}
+
+.pc-sun-rays {
+  position: absolute;
+  inset: -40%;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 55%,
+    rgba(232, 194, 126, 0.04) 0deg 8deg,
+    transparent 8deg 16deg
+  );
+  animation: pc-sun-spin 120s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes pc-sun-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pc-sun-glow {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 280px;
+  height: 280px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(232, 185, 81, 0.35) 0%,
+    rgba(232, 185, 81, 0.08) 40%,
+    transparent 70%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+  animation: pc-sun-pulse 4s ease-in-out infinite;
+}
+
+@keyframes pc-sun-pulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+.pc-sun-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.pc-sun-visual {
+  width: min(220px, 58vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(232, 194, 126, 0.35);
+  box-shadow:
+    0 0 48px rgba(232, 185, 81, 0.35),
+    0 0 96px rgba(232, 185, 81, 0.15),
+    inset 0 0 24px rgba(232, 194, 126, 0.1);
+  background: radial-gradient(circle at 50% 30%, #2a2010 0%, #0a0804 100%);
+}
+
+.pc-sun-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.pc-sun-name {
+  margin: 0;
+  font-family: "Noto Serif SC", serif;
+  font-size: clamp(24px, 6vw, 32px);
+  font-weight: 700;
+  letter-spacing: 8px;
+  background: linear-gradient(180deg, #f5d4a8 0%, #e8b951 40%, #b38741 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 2px 16px rgba(232, 185, 81, 0.3));
+}
+
+.pc-sun-desc {
+  margin: 0;
+  max-width: 320px;
+  font-size: 14px;
+  line-height: 1.85;
+  letter-spacing: 1px;
+  color: rgba(245, 240, 232, 0.62);
+}
+
+@media (min-width: 520px) {
+  .pc-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .pc-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 16px 14px 18px;
+  }
+
+  .pc-card-visual {
+    width: 100%;
+    height: 120px;
+    border-radius: 12px;
+  }
+
+  .pc-card-body {
+    text-align: center;
+  }
+
+  .pc-sun-hero {
+    margin-left: -24px;
+    margin-right: -24px;
+    padding: 48px 32px 52px;
+  }
+
+  .pc-sun-visual {
+    width: 240px;
+  }
+}
+
+@media (min-width: 768px) {
+  .pc-section {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pc-sun-hero {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 24px;
+  }
+
+  .pc-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

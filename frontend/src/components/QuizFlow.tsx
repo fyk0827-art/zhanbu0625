@@ -82,7 +82,9 @@ export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
   });
 
   const determineAgeGroup = (age: number): AgeGroup | null => {
-    return ageGroups.find((g) => age >= g.minAge && age <= g.maxAge) || null;
+    const match = ageGroups.find((g) => age >= g.minAge && age <= g.maxAge) || null;
+    if (!match) console.error("[AgeGroup] No match for age", age, "groups:", JSON.stringify(ageGroups));
+    return match;
   };
 
   const handleAgeSubmit = () => {

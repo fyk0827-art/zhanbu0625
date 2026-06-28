@@ -759,10 +759,11 @@ export default function BlueprintReport({ chart }: Props) {
 
   const paymentReturnOrderId =
     getRouterSearchParams().get("orderId") || getRouterSearchParams().get("out_trade_no");
+  const isPaypalReturn = Boolean(paymentReturnOrderId && getRouterSearchParams().get("token"));
 
   if (!activeChart) {
     const waitingPay =
-      Boolean(paymentReturnOrderId) &&
+      (Boolean(paymentReturnOrderId) || isPaypalReturn) &&
       (confirmingReturn || restoring || unlockLoading || (!isUnlocked && !pollExhausted));
     let statusText: string;
     if (payError) statusText = payError;
@@ -789,7 +790,7 @@ export default function BlueprintReport({ chart }: Props) {
     );
   }
 
-  if (previewText && !hasAiReport) {
+  if (previewText && !hasAiReport && !isPaypalReturn) {
     if (isPaid) {
       if (generating) {
         return (

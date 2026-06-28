@@ -281,6 +281,15 @@ public class PaymentService {
         }
         OrderRecord o = order.get();
         metaCapi.sendPurchase(o, null, null, null, null);
+        repo.findReportById(o.reportId()).ifPresent(report -> {
+            if (o.payerContact() != null && !o.payerContact().isBlank()) {
+                try {
+                    emailService.sendReport(o.payerContact(), o.reportId(), report.reportText(), report.displayName());
+                } catch (Exception e) {
+                    // Log but don't fail the capture
+                }
+            }
+        });
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("ok", true);
         body.put("orderId", o.id());

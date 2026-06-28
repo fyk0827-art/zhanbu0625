@@ -65,4 +65,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["@swisseph/browser", "@swisseph/core"],
   },
+  build: {
+    modulePreload: { polyfill: false },
+  },
 })

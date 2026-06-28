@@ -95,7 +95,6 @@ export default function App() {
       if (!text.trim()) throw new Error(t("genReportFailed"));
 
       const { reportId } = await persistReport(text, natalChart);
-      setIsLoading(false);
       if (!hasNavigated.current) {
         hasNavigated.current = true;
         window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;

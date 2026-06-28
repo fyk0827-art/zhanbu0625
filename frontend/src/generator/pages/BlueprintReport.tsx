@@ -790,25 +790,32 @@ export default function BlueprintReport({ chart }: Props) {
   }
 
   if (previewText && !hasAiReport) {
-    if (isPaid && generating) {
-      return (
-        <div className="min-h-screen flex items-center justify-center" style={{ background: "#0D1B2A" }}>
-          <PrismAnalysisAnimation charCount={genCharCount} />
-        </div>
-      );
-    }
-    if (isPaid && genError) {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#0D1B2A", color: "#9CA3AF" }}>
-          <p>{t("aiGenFailed", { error: genError })}</p>
-          <div className="flex gap-3">
-            <button type="button" className="px-4 py-2 rounded-lg text-sm border" style={{ borderColor: "rgba(232,185,81,0.3)", color: "#E8B951" }} onClick={() => navigate(generatorPath())}>
-              {t("backToHome")}
-            </button>
-            <button type="button" className="px-4 py-2 rounded-lg text-sm text-white" style={{ background: PRIMARY }} onClick={() => navigate(generatorPath("settings"))}>
-              {t("checkApiKey")}
-            </button>
+    if (isPaid) {
+      if (generating) {
+        return (
+          <div className="min-h-screen flex items-center justify-center" style={{ background: "#0D1B2A" }}>
+            <PrismAnalysisAnimation charCount={genCharCount} />
           </div>
+        );
+      }
+      if (genError) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#0D1B2A", color: "#9CA3AF" }}>
+            <p>{t("aiGenFailed", { error: genError })}</p>
+            <div className="flex gap-3">
+              <button type="button" className="px-4 py-2 rounded-lg text-sm border" style={{ borderColor: "rgba(232,185,81,0.3)", color: "#E8B951" }} onClick={() => navigate(generatorPath())}>
+                {t("backToHome")}
+              </button>
+              <button type="button" className="px-4 py-2 rounded-lg text-sm text-white" style={{ background: PRIMARY }} onClick={() => navigate(generatorPath("settings"))}>
+                {t("checkApiKey")}
+              </button>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: "#0D1B2A", color: "#9CA3AF" }}>
+          {t("preparingReport")}
         </div>
       );
     }

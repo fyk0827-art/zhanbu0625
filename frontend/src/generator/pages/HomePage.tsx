@@ -26,6 +26,7 @@ export default function HomePage({ onGenerate, isLoading, charCount = 0 }: Props
   const [prepaidBanner, setPrepaidBanner] = useState<string | null>(null);
   const [prepaidError, setPrepaidError] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState(() => typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "");
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("12:00");
   const [selectedLocation, setSelectedLocation] = useState<GeoLocation | null>(null);
@@ -150,6 +151,22 @@ export default function HomePage({ onGenerate, isLoading, charCount = 0 }: Props
               onChange={(e) => setName(e.target.value)}
               onBlur={() => { if (name.trim()) trackEvent("name", true); }}
               placeholder={t("genNamePlaceholder")}
+              className="prism-input"
+            />
+          </div>
+
+          <div className="mb-5 text-left">
+            <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+              <span className="prism-font-serif text-[13px] font-semibold tracking-wide" style={{ color: "rgba(250,246,240,0.7)" }}>
+                {t("emailTitle")}
+              </span>
+              <span className="text-[11px] italic" style={{ color: "rgba(232,185,81,0.35)" }}>{t("emailHelpText")}</span>
+            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); localStorage.setItem("userEmail", e.target.value); }}
+              placeholder={t("emailPlaceholder")}
               className="prism-input"
             />
           </div>

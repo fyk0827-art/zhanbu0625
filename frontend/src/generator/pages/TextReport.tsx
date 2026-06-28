@@ -87,7 +87,7 @@ export default function TextReport({ chart, onTextConfirm }: Props) {
       await Promise.resolve(onTextConfirm(rawText));
       const rid = await computeReportId(chart.birthData, reportType);
       saveReportId(rid, reportType);
-      navigate(`${generatorPath("final-report")}?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(rid)}`);
+      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(rid)}`;
     } catch (e) {
       setConfirmError(e instanceof Error ? e.message : t("jumpFailed"));
     } finally {

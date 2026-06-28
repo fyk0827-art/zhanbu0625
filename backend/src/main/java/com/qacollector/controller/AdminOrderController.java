@@ -47,11 +47,14 @@ public class AdminOrderController {
             pageSize, offset
         );
 
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("items", items);
+        data.put("total", total != null ? total : 0);
+        data.put("page", page);
+        data.put("pageSize", pageSize);
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("items", items);
-        result.put("total", total != null ? total : 0);
-        result.put("page", page);
-        result.put("pageSize", pageSize);
+        result.put("success", true);
+        result.put("data", data);
         return result;
     }
 }

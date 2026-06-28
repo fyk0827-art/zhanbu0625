@@ -1948,6 +1948,9 @@ function applyDocumentLanguage(lng: string) {
   const code = lng.split("-")[0];
   document.documentElement.lang = code;
   document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
+  document.title = code === "zh"
+    ? "PRISM 人生剧本 — 解码你的命运蓝图"
+    : "PRISM Life Script — Decode Your Destiny Blueprint";
 }
 
 applyDocumentLanguage(i18n.language || "en");

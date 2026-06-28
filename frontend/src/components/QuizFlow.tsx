@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { X, Loader2, Check, ChevronRight } from "lucide-react";
@@ -35,6 +35,7 @@ function getDimIndex(qIndex: number, total: number): number {
 export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
   const { t, i18n } = useTranslation();
   const [step, setStep] = useState<QuizStep>("email");
+  const emailRef = useRef("");
   const [userEmail, setUserEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [userAge, setUserAge] = useState("");
@@ -43,6 +44,22 @@ export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [selections, setSelections] = useState<Record<number, string>>({});
   const [slideKey, setSlideKey] = useState(0);
+
+  const handleEmailSubmit = useCallback(() => {
+    const email = emailRef.current.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError(t("invalidEmail")); return;
+    }
+    setEmailError("");
+    localStorage.setItem("userEmail", email);
+    trackEvent("email_submit", true);
+    fetch("/api/collect-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, source: "quiz" }),
+    }).catch(() => {});
+    setStep("age");
+  }, [t]);
 
   const { data: publicSettings } = useQuery({
     queryKey: ["publicSettings"],
@@ -153,28 +170,14 @@ export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
             <input
               type="email"
               value={userEmail}
-              onChange={(e) => { setUserEmail(e.target.value); setEmailError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && setStep("age")}
+              onChange={(e) => { emailRef.current = e.target.value; setUserEmail(e.target.value); setEmailError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
               placeholder={t("emailPlaceholder")}
               autoFocus
               className="prism-input text-center text-lg prism-font-serif mb-4"
             />
             {emailError && <p className="mb-4 text-sm" style={{ color: "var(--prism-danger)" }}>{emailError}</p>}
-            <button className="prism-btn-gold w-full" onClick={() => {
-              if (!userEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail.trim())) {
-                setEmailError(t("invalidEmail")); return;
-              }
-              setEmailError("");
-              const email = userEmail.trim();
-              localStorage.setItem("userEmail", email);
-              trackEvent("email_submit", true);
-              fetch("/api/collect-email", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, source: "quiz" }),
-              }).catch(() => {});
-              setStep("age");
-            }} disabled={!userEmail.trim()}>
+            <button className="prism-btn-gold w-full" onClick={handleEmailSubmit} disabled={!userEmail.trim()}>
               {t("continue")}
             </button>
           </div>

@@ -523,7 +523,13 @@ export default function BlueprintReport({ chart }: Props) {
   const { t, i18n } = useTranslation();
   const locale = resolveReportLocale(i18n.language);
   const navigate = useNavigate();
-  const [restoredChart, setRestoredChart] = useState<NatalChart | null>(null);
+  const [restoredChart, setRestoredChart] = useState<NatalChart | null>(() => {
+    try {
+      const raw = sessionStorage.getItem("taiji_chart_json");
+      if (raw) return JSON.parse(raw) as NatalChart;
+    } catch { /* ignore */ }
+    return null;
+  });
   const activeChart = chart ?? restoredChart ?? getGlobalChart();
   const [restoring, setRestoring] = useState(false);
   const reportType = parseReportTypeId(

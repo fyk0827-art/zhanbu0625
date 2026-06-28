@@ -85,6 +85,7 @@ export default function App() {
       clearReportText(getGlobalReportType());
       clearAiReportDone(getGlobalReportType());
       setChart(natalChart);
+      sessionStorage.setItem("taiji_chart_json", JSON.stringify(natalChart));
 
       const reportType = getGlobalReportType();
       const text = generateBirthReport500(natalChart, i18n.language);
@@ -97,7 +98,7 @@ export default function App() {
       setIsLoading(false);
       if (!hasNavigated.current) {
         hasNavigated.current = true;
-        navigate(`${generatorPath("final-report")}?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`);
+        window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);

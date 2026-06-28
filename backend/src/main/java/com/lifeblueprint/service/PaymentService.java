@@ -240,7 +240,7 @@ public class PaymentService {
 
         String returnUrl = PaymentReturnUrls.finalReport(props, orderId, reportId, true);
         String cancelUrl = PaymentReturnUrls.finalReport(props, orderId, reportId, false);
-        Map<String, Object> paypalOrder = paypal.createOrder(orderId, props.getOrderAmount(), props.getProductTitle(), returnUrl, cancelUrl);
+        Map<String, Object> paypalOrder = paypal.createOrder(orderId, amountCents, props.getProductTitle(), returnUrl, cancelUrl);
         String paypalOrderId = (String) paypalOrder.get("id");
         String approvalUrl = paypal.extractApprovalUrl(paypalOrder);
 

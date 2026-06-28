@@ -130,6 +130,14 @@ export default function GeneratingPage() {
         return parseFloat((prev - 0.1).toFixed(1));
       });
     }, 100);
+    // 从 localStorage 恢复 chart（PayPal 跳转可能清掉了 sessionStorage）
+    if (!sessionStorage.getItem("taiji_chart_json")) {
+      const backup = localStorage.getItem("taiji_chart_json_persist");
+      if (backup) {
+        sessionStorage.setItem("taiji_chart_json", backup);
+        console.log("[GenPage] chart restored from localStorage");
+      }
+    }
     const chart = await getChart();
     if (!chart) {
       const serverData = await fetchReportFromServer(reportId).catch(() => null);
@@ -181,6 +189,8 @@ export default function GeneratingPage() {
       const natalChart = await calculateNatalChart(birthData);
       saveBirthData(birthData);
       sessionStorage.setItem("taiji_chart_json", JSON.stringify(natalChart));
+      localStorage.setItem("taiji_chart_json_persist", JSON.stringify(natalChart));
+      console.log("[GenPage] chart saved to session + localStorage");
 
       setStatusText(t("genReportGenerating"));
       const text = generateBirthReport500(natalChart, i18n.language);

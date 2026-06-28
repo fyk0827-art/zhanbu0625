@@ -222,7 +222,9 @@ public class PaymentService {
                 null,
                 blankToNull(req.payerContact()),
                 System.currentTimeMillis(),
-                null
+                null,
+                blankToNull(req.fbp()),
+                blankToNull(req.fbc())
         );
         repo.upsertOrder(order);
 
@@ -257,7 +259,7 @@ public class PaymentService {
         return body;
     }
 
-    public Map<String, Object> capturePayPalOrder(String orderId, String paypalOrderId) {
+    public Map<String, Object> capturePayPalOrder(String orderId, String paypalOrderId, String clientIp, String userAgent) {
         Map<String, Object> captureResult = paypal.captureOrder(paypalOrderId);
         String status = (String) captureResult.get("status");
         if (!"COMPLETED".equals(status)) {
@@ -280,7 +282,7 @@ public class PaymentService {
             throw new IllegalArgumentException("订单不存在: " + orderId);
         }
         OrderRecord o = order.get();
-        metaCapi.sendPurchase(o, null, null, null, null);
+        metaCapi.sendPurchase(o, clientIp, userAgent, o.fbp(), o.fbc());
         repo.findReportById(o.reportId()).ifPresent(report -> {
             if (o.payerContact() != null && !o.payerContact().isBlank()) {
                 try {

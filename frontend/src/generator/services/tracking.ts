@@ -8,6 +8,15 @@ export function trackEvent(name: string, once = false) {
   } catch {}
 }
 
+export function trackFbPurchase({ eventId, value, currency }: { eventId: string; value: number; currency: string }) {
+  try {
+    const fbq = (window as any).fbq;
+    if (typeof fbq === "function") {
+      fbq("track", "Purchase", { value, currency }, { eventID: eventId });
+    }
+  } catch {}
+}
+
 export function getFbpCookie(): string | undefined {
   try {
     const match = document.cookie.match(/_fbp=([^;]+)/);

@@ -544,7 +544,6 @@ export default function BlueprintReport({ chart }: Props) {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [genCharCount, setGenCharCount] = useState(0);
-  const autoGenRef = useRef(false);
   const [reportId, setReportId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return getRouterSearchParams().get("reportId") || loadReportId(reportType);
@@ -618,32 +617,6 @@ export default function BlueprintReport({ chart }: Props) {
       return text;
     });
   }, [i18n.language, activeChart, reportType]);
-
-  /** 每次 isPaid 为 true 时强制重新生成深度报告 */
-  useEffect(() => {
-    if (!activeChart || !isPaid || autoGenRef.current) return;
-    const preview = loadPreviewReportText(reportType)
-      || (reportText && isPreviewReport500(reportText) ? reportText : "");
-    if (!preview) return;
-
-    autoGenRef.current = true;
-    setGenerating(true);
-    setGenError(null);
-    generateReportText(activeChart, reportType, (text) => setGenCharCount(text.length), preview, i18n.language)
-      .then((text) => {
-        if (!text.trim()) throw new Error("AI report generation failed: no valid content received");
-        setReportText(text);
-        setGlobalReportText(text, reportType);
-        saveReportText(text, reportType);
-        trackEvent("report_success", true);
-      })
-      .catch((e) => {
-        autoGenRef.current = false;
-        setGenError(e instanceof Error ? e.message : String(e));
-        trackEvent("report_fail", true);
-      })
-      .finally(() => setGenerating(false));
-  }, [activeChart, isPaid, reportType, i18n.language]);
 
   /** 支付宝回跳后内存中无 chart，从服务器恢复（解锁后才有 chartJson / 全文） */
   // 每次 reportText 变化时清洗中文

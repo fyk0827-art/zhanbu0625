@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import PrismBackground from "@/components/prism/PrismBackground";
 import PrismBrandSymbol from "@/components/prism/PrismBrandSymbol";
-import type { BirthData } from "../services/astrologyEngine";
 import { setGlobalReportType } from "../services/reportSession";
 import { fetchPartnerOrder, setPrepaidOrderId } from "../services/partnerApi";
 import { trackEvent } from "../services/tracking";
@@ -13,13 +12,7 @@ import LocationPicker from "../components/LocationPicker";
 import PlanetCharactersSection from "@/components/PlanetCharactersSection";
 import "@/styles/prism.css";
 
-interface Props {
-  onGenerate: (data: BirthData) => void;
-  isLoading: boolean;
-  charCount?: number;
-}
-
-export default function HomePage({ onGenerate, isLoading, charCount = 0 }: Props) {
+export default function HomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -85,29 +78,19 @@ export default function HomePage({ onGenerate, isLoading, charCount = 0 }: Props
     const [year, month, day] = birthDate.split("-").map(Number);
     const [hour, minute] = birthTime.split(":").map(Number);
     setGlobalReportType("full");
-    onGenerate({ year, month, day, hour, minute, latitude: lat, longitude: lng, timezone: tz, gender, name: name || undefined });
-  }, [birthDate, birthTime, selectedLocation, gender, name, onGenerate, useCustomCoords, customLat, customLng, customTz]);
 
-  if (isLoading) {
-    return (
-      <div className="prism-root min-h-screen relative overflow-hidden">
-        <PrismBackground />
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
-          <div className="w-10 h-10 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
-          <p className="text-sm" style={{ color: "var(--prism-cream)" }}>{t("genCalculatingChart")}</p>
-          <p className="text-xs opacity-70" style={{ color: "var(--prism-cream)" }}>{t("genReportGenerating")}</p>
-        </div>
-      </div>
-    );
-  }
+    const birthData = { year, month, day, hour, minute, latitude: lat, longitude: lng, timezone: tz, gender, name: name || undefined };
+    sessionStorage.setItem("taiji_birth_data", JSON.stringify(birthData));
+    localStorage.setItem("userEmail", email);
+    navigate(`/generator/generating?reportType=${encodeURIComponent("full")}`);
+  }, [birthDate, birthTime, selectedLocation, gender, name, useCustomCoords, customLat, customLng, customTz, email, navigate]);
 
   return (
-    <div className="prism-root min-h-screen relative overflow-x-hidden overflow-y-auto">
+    <div className="prism-root min-h-screen relative overflow-hidden">
       <PrismBackground />
-
-      <div className="relative z-10 w-full max-w-[480px] mx-auto px-5 py-10 min-h-screen flex flex-col justify-start">
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-5 prism-fade-in">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
+        <div className="w-full max-w-[420px] text-center">
+          <div className="mx-auto mb-5 prism-fade-in prism-fade-d1">
             <PrismBrandSymbol size={48} />
           </div>
           <div className="prism-font-display text-sm font-semibold tracking-[8px] uppercase mb-1" style={{ color: "var(--prism-gold)" }}>
@@ -137,7 +120,7 @@ export default function HomePage({ onGenerate, isLoading, charCount = 0 }: Props
           </div>
         )}
 
-        <div className="prism-birth-form">
+        <div className="prism-birth-form w-full max-w-[420px]">
           <div className="mb-5 text-left">
             <div className="flex items-baseline gap-2 mb-2 flex-wrap">
               <span className="prism-font-serif text-[13px] font-semibold tracking-wide" style={{ color: "rgba(250,246,240,0.7)" }}>
@@ -224,50 +207,34 @@ export default function HomePage({ onGenerate, isLoading, charCount = 0 }: Props
               <span className="prism-font-serif text-[13px] font-semibold" style={{ color: "rgba(250,246,240,0.7)" }}>
                 {t("genBirthPlace")} <span style={{ color: "var(--prism-gold)" }}>*</span>
               </span>
-              <span className="text-[11px] italic" style={{ color: "rgba(232,185,81,0.35)" }}>{t("genLocationHint")}</span>
+              <span className="text-[11px] italic" style={{ color: "rgba(232,185,81,0.35)" }}>{t("genBirthPlaceHint")}</span>
             </div>
-
-            {!useCustomCoords ? (
-              <LocationPicker
-                value={selectedLocation}
-                onChange={selectLocation}
-                error={fieldErrors.city}
-                placeholder={t("genLocationPlaceholder")}
-              />
-            ) : (
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <input type="number" step="0.01" value={customLat} onChange={(e) => setCustomLat(e.target.value)}
-                    placeholder={t("genLatitude")} className={`prism-input ${fieldErrors.coords ? "error" : ""}`} />
-                  <input type="number" step="0.01" value={customLng} onChange={(e) => setCustomLng(e.target.value)}
-                    placeholder={t("genLongitude")} className={`prism-input ${fieldErrors.coords ? "error" : ""}`} />
+            {useCustomCoords ? (
+              <div className="flex gap-2 items-start">
+                <div className="flex-1 space-y-2">
+                  <input type="number" step="any" placeholder="Latitude" value={customLat} onChange={(e) => setCustomLat(e.target.value)} className={`prism-input ${fieldErrors.coords ? "error" : ""}`} />
+                  <input type="number" step="any" placeholder="Longitude" value={customLng} onChange={(e) => setCustomLng(e.target.value)} className={`prism-input ${fieldErrors.coords ? "error" : ""}`} />
                 </div>
-                <input type="number" step="0.5" value={customTz} onChange={(e) => setCustomTz(e.target.value)}
-                  placeholder={t("genTimezone")} className="prism-input" />
+                <div className="w-20 shrink-0">
+                  <input type="number" step="any" placeholder="Timezone" value={customTz} onChange={(e) => setCustomTz(e.target.value)} className="prism-input" />
+                </div>
               </div>
+            ) : (
+              <LocationPicker onSelect={selectLocation} />
             )}
-
-            <button
-              type="button"
-              onClick={() => setUseCustomCoords(!useCustomCoords)}
-              className="text-[11px] mt-2 hover:underline"
-              style={{ color: "var(--prism-gold)" }}
-            >
-              {useCustomCoords ? t("genUseCityList") : t("genManualCoords")}
+            <button type="button" onClick={() => setUseCustomCoords(!useCustomCoords)} className="text-[11px] mt-2 hover:underline" style={{ color: "rgba(232,185,81,0.6)" }}>
+              {useCustomCoords ? t("genSelectFromCity") : t("genEnterCoords")}
             </button>
+            {fieldErrors.city && <p className="text-xs mt-1" style={{ color: "var(--prism-danger)" }}>{t("genCityRequired")}</p>}
           </div>
 
-          <button
-            type="button"
-            className="prism-btn-gold w-full mt-7"
-            onClick={handleSubmit}
-          >
-            {t("genConnectChart")}
+          <button type="button" className="prism-btn-gold w-full mt-7" onClick={handleSubmit}>
+            {t("genConnectStars")}
           </button>
         </div>
 
-        <p className="text-center text-[10px] tracking-[3px] mt-6" style={{ color: "rgba(250,246,240,0.2)" }}>
-          {t("genEphemeris")}
+        <p className="mt-6 text-[10px] tracking-wider" style={{ color: "rgba(232,185,81,0.25)" }}>
+          Swiss Ephemeris · High-precision astronomy
         </p>
 
         <PlanetCharactersSection />

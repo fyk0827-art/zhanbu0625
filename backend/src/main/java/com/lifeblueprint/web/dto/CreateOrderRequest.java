@@ -6,5 +6,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public record CreateOrderRequest(
         String reportId,
         String client,
-        String payerContact
+        String payerContact,
+        String fbp,
+        String fbc,
+        String eventSourceUrl
 ) {}

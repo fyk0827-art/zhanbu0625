@@ -75,13 +75,18 @@ public class PaymentApiController {
     }
 
     @PostMapping("/paypal/capture")
-    public Map<String, Object> capturePayPalOrder(@RequestBody Map<String, String> body) {
+    public Map<String, Object> capturePayPalOrder(
+            @RequestBody Map<String, String> body,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
         String orderId = body.get("orderId");
         String paypalOrderId = body.get("paypalOrderId");
         if (orderId == null || paypalOrderId == null) {
             throw new IllegalArgumentException("orderId and paypalOrderId are required");
         }
-        return paymentService.capturePayPalOrder(orderId, paypalOrderId);
+        String clientIp = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        return paymentService.capturePayPalOrder(orderId, paypalOrderId, clientIp, userAgent);
     }
 
     @PostMapping("/notify/alipay")

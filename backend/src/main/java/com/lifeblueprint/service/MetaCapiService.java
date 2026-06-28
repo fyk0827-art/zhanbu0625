@@ -28,6 +28,9 @@ public class MetaCapiService {
     @Value("${meta.currency:USD}")
     private String currency;
 
+    @Value("${payment.frontend-url:https://divinlove.com}")
+    private String frontendUrl;
+
     private final JdbcTemplate jdbc;
     private final RestTemplate restTemplate;
 
@@ -53,7 +56,10 @@ public class MetaCapiService {
     }
 
     public void sendPurchase(OrderRecord order, String clientIp, String userAgent, String fbp, String fbc) {
-        if (accessToken == null || accessToken.isBlank()) return;
+        if (accessToken == null || accessToken.isBlank()) {
+            System.err.println("[MetaCapi] META_CAPI_ACCESS_TOKEN is empty, skipping Purchase event");
+            return;
+        }
         if (order.status() != com.lifeblueprint.domain.OrderStatus.paid) return;
 
         String eventId = order.id();
@@ -66,11 +72,14 @@ public class MetaCapiService {
 
         long eventTime = System.currentTimeMillis() / 1000;
 
+        String effectiveFbp = (fbp != null && !fbp.isBlank()) ? fbp : order.fbp();
+        String effectiveFbc = (fbc != null && !fbc.isBlank()) ? fbc : order.fbc();
+
         Map<String, Object> userData = new LinkedHashMap<>();
         userData.put("client_ip_address", clientIp != null ? clientIp : "127.0.0.1");
         userData.put("client_user_agent", userAgent != null ? userAgent : "unknown");
-        if (fbp != null && !fbp.isBlank()) userData.put("fbp", fbp);
-        if (fbc != null && !fbc.isBlank()) userData.put("fbc", fbc);
+        if (effectiveFbp != null && !effectiveFbp.isBlank()) userData.put("fbp", effectiveFbp);
+        if (effectiveFbc != null && !effectiveFbc.isBlank()) userData.put("fbc", effectiveFbc);
 
         Map<String, Object> customData = new LinkedHashMap<>();
         customData.put("currency", currency);
@@ -82,7 +91,7 @@ public class MetaCapiService {
         event.put("event_time", eventTime);
         event.put("event_id", eventId);
         event.put("action_source", "website");
-        event.put("event_source_url", "http://localhost:3033/generator/final-report?orderId=" + order.id());
+        event.put("event_source_url", frontendUrl + "/generator/generating?orderId=" + order.id());
         event.put("user_data", userData);
         event.put("custom_data", customData);
 
@@ -105,11 +114,13 @@ public class MetaCapiService {
                 "UPDATE facebook_events SET status = 'success', response_text = ?, updated_at = ? WHERE order_id = ?",
                 response, System.currentTimeMillis(), eventId
             );
+            System.out.println("[MetaCapi] Purchase success for order " + order.id() + ": " + response);
         } catch (Exception e) {
             jdbc.update(
                 "UPDATE facebook_events SET status = 'failed', response_text = ?, updated_at = ? WHERE order_id = ?",
                 e.getMessage(), System.currentTimeMillis(), eventId
             );
+            System.err.println("[MetaCapi] Purchase failed for order " + order.id() + ": " + e.getMessage());
         }
     }
 }

@@ -30,10 +30,11 @@ public final class PaymentReturnUrls {
             boolean includePaidFlag
     ) {
         StringBuilder url = new StringBuilder(props.getFrontendUrl())
-                .append("/generator/final-report?orderId=")
+                .append("/generator/generating?orderId=")
                 .append(encode(orderId))
                 .append("&reportId=")
-                .append(encode(reportId));
+                .append(encode(reportId))
+                .append("&reportType=full");
         if (includePaidFlag) {
             url.append("&paid=1");
         }

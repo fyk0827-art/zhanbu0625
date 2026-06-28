@@ -95,7 +95,7 @@ export async function checkUnlock(reportId: string): Promise<UnlockStatus> {
 
 export async function createOrder(
   reportId: string,
-  options?: { payerContact?: string; reportType?: string }
+  options?: { payerContact?: string; reportType?: string; fbp?: string; fbc?: string; eventSourceUrl?: string }
 ): Promise<CreateOrderResponse> {
   const res = await fetch(`${API_BASE}/api/orders`, {
     method: "POST",
@@ -104,6 +104,9 @@ export async function createOrder(
       reportId,
       payerContact: options?.payerContact,
       reportType: options?.reportType,
+      fbp: options?.fbp,
+      fbc: options?.fbc,
+      eventSourceUrl: options?.eventSourceUrl,
     }),
   });
   return parseJson(res);

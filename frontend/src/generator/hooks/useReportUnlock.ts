@@ -161,13 +161,15 @@ export function useReportUnlock(
         const userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
         const fbp = getFbpCookie();
         const fbc = getFbcCookie();
-        res = await createOrder(reportId, { reportType: options?.reportType, payerContact: userEmail });
+        res = await createOrder(reportId, { reportType: options?.reportType, payerContact: userEmail, fbp, fbc, eventSourceUrl: window.location.href });
       } catch (firstErr) {
         const msg = firstErr instanceof Error ? firstErr.message : "";
         if (/orders|unlocks|数据库|Database|500/.test(msg)) {
           await ensurePaymentSchema();
           const userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
-          res = await createOrder(reportId, { reportType: options?.reportType, payerContact: userEmail });
+          const fbp = getFbpCookie();
+          const fbc = getFbcCookie();
+          res = await createOrder(reportId, { reportType: options?.reportType, payerContact: userEmail, fbp, fbc, eventSourceUrl: window.location.href });
         } else {
           throw firstErr;
         }

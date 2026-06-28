@@ -12,7 +12,7 @@ spring:
 
 payment:
   mode: paypal
-  order-amount: 5999
+  order-amount: 2990
   frontend-url: https://divinlove.com
   base-url: https://divinlove.com
   paypal:

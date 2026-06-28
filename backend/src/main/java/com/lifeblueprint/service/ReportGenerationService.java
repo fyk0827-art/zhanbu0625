@@ -115,6 +115,19 @@ public class ReportGenerationService {
     // ===== Constants =====
     static final List<String> PLANET_ORDER = List.of("太阳", "月亮", "水星", "金星", "火星", "木星", "土星", "天王星", "海王星", "冥王星");
 
+    static final Map<String, String> PLANET_EN = Map.of(
+        "太阳", "Sun", "月亮", "Moon", "水星", "Mercury", "金星", "Venus",
+        "火星", "Mars", "木星", "Jupiter", "土星", "Saturn",
+        "天王星", "Uranus", "海王星", "Neptune", "冥王星", "Pluto"
+    );
+
+    static final Map<String, String> SIGN_EN = Map.ofEntries(
+        Map.entry("白羊座", "Aries"), Map.entry("金牛座", "Taurus"), Map.entry("双子座", "Gemini"),
+        Map.entry("巨蟹座", "Cancer"), Map.entry("狮子座", "Leo"), Map.entry("处女座", "Virgo"),
+        Map.entry("天秤座", "Libra"), Map.entry("天蝎座", "Scorpio"), Map.entry("射手座", "Sagittarius"),
+        Map.entry("摩羯座", "Capricorn"), Map.entry("水瓶座", "Aquarius"), Map.entry("双鱼座", "Pisces")
+    );
+
     static final Map<String, Integer> PLANET_BASE = Map.of(
         "太阳", 65, "月亮", 61, "金星", 57, "水星", 53,
         "木星", 51, "土星", 50, "火星", 47, "天王星", 43,
@@ -202,7 +215,7 @@ public class ReportGenerationService {
         sb.append("[Planet Energies]\n");
         List<String> sorted = scores.entrySet().stream()
             .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-            .map(e -> "· " + e.getKey() + ": " + e.getValue() + " pts")
+            .map(e -> "· " + PLANET_EN.getOrDefault(e.getKey(), e.getKey()) + ": " + e.getValue() + " pts")
             .collect(Collectors.toList());
         for (String s : sorted) sb.append(s).append("\n");
 
@@ -213,23 +226,29 @@ public class ReportGenerationService {
             String sign = getText(p, "sign", "");
             int bonus = getDignityBonus(planet, sign);
             String status = bonus >= 12 ? "Ruling" : bonus >= 6 ? "Exalted" : bonus <= -12 ? "Fallen" : bonus <= -6 ? "Detriment" : "Neutral";
-            sb.append("· ").append(planet).append(" in ").append(sign.replace("座", "")).append(": ").append(status).append("\n");
+            sb.append("· ").append(PLANET_EN.getOrDefault(planet, planet))
+              .append(" in ").append(SIGN_EN.getOrDefault(sign, sign.replace("座", "")))
+              .append(": ").append(status).append("\n");
         }
 
         sb.append("\n[House Placements]\n");
         for (String planet : PLANET_ORDER) {
             int h = chart.getHouse(planet);
             if (h > 0) {
-                sb.append("· ").append(planet).append(": House ").append(h).append("\n");
+                sb.append("· ").append(PLANET_EN.getOrDefault(planet, planet))
+                  .append(": House ").append(h).append("\n");
             }
         }
 
-        sb.append("\n[Core Trio] Sun in ").append(chart.sunSign.replace("座", ""))
-          .append(" · Moon in ").append(chart.moonSign.replace("座", ""))
-          .append(" · Ascendant ").append(chart.ascSign.replace("座", ""))
-          .append("\n");
+        String sunEn = SIGN_EN.getOrDefault(chart.sunSign, chart.sunSign.replace("座", ""));
+        String moonEn = SIGN_EN.getOrDefault(chart.moonSign, chart.moonSign.replace("座", ""));
+        String ascEn = SIGN_EN.getOrDefault(chart.ascSign, chart.ascSign.replace("座", ""));
+        sb.append("\n[Core Trio] Sun in ").append(sunEn)
+          .append(" · Moon in ").append(moonEn)
+          .append(" · Ascendant ").append(ascEn).append("\n");
 
-        sb.append("\n[Dominant Planet] ").append(dominant)
+        String domEn = PLANET_EN.getOrDefault(dominant, dominant);
+        sb.append("\n[Dominant Planet] ").append(domEn)
           .append(" (").append(scores.getOrDefault(dominant, 0)).append(" pts)\n");
 
         return sb.toString();
@@ -275,9 +294,11 @@ public class ReportGenerationService {
         String name = displayName != null && !displayName.isBlank() ? displayName : "this person";
         String gender = chart.birthData != null ? getText(chart.birthData, "gender", "male") : "male";
 
-        String sunEn = chart.sunSign.replace("座", "");
-        String moonEn = chart.moonSign.replace("座", "");
-        String ascEn = chart.ascSign.replace("座", "");
+        String sunEn = SIGN_EN.getOrDefault(chart.sunSign, chart.sunSign.replace("座", ""));
+        String moonEn = SIGN_EN.getOrDefault(chart.moonSign, chart.moonSign.replace("座", ""));
+        String ascEn = SIGN_EN.getOrDefault(chart.ascSign, chart.ascSign.replace("座", ""));
+        String domEn = PLANET_EN.getOrDefault(dominantPlanet, dominantPlanet);
+        int domScore = scores.getOrDefault(dominantPlanet, 0);
 
         String previewBlock = (previewText != null && !previewText.isBlank())
             ? "\n\n[500-word preview report]\n" + previewText + "\n"
@@ -286,11 +307,11 @@ public class ReportGenerationService {
         return "Generate a Life Blueprint text report for " + name + " (" + gender + ").\n\n"
             + "The following natal chart data has been precisely calculated. Use it directly — do not recalculate anything.\n\n"
             + "[Core Trio] Sun in " + sunEn + " · Moon in " + moonEn + " · Ascendant " + ascEn + "\n\n"
-            + calcText + previewText + "\n\n"
+            + calcText + previewBlock + "\n\n"
             + "Follow the 8-section structure in the system prompt. Output Markdown in English. Remember:\n"
             + "1. Use the calculation results above directly; do not recalculate\n"
             + "2. Analyze the Sun first\n"
-            + "3. Highest-scoring planet (" + dominantPlanet + ", " + scores.getOrDefault(dominantPlanet, 0) + " pts) as the report main title\n"
+            + "3. Highest-scoring planet (" + domEn + ", " + domScore + " pts) as the report main title\n"
             + "4. All dispositor conclusions in \"Hx flies to Hy\" format\n"
             + "5. No zodiac sign names, no astrology jargon, no romantic metaphors\n"
             + "6. 3500–4500 words";

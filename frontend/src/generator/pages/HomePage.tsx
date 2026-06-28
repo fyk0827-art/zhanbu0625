@@ -220,7 +220,7 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <LocationPicker onSelect={selectLocation} />
+              <LocationPicker value={selectedLocation} onChange={selectLocation} />
             )}
             <button type="button" onClick={() => setUseCustomCoords(!useCustomCoords)} className="text-[11px] mt-2 hover:underline" style={{ color: "rgba(232,185,81,0.6)" }}>
               {useCustomCoords ? t("genSelectFromCity") : t("genEnterCoords")}

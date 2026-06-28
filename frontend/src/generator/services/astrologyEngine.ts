@@ -1,9 +1,10 @@
 // ============================================
 // Swiss Ephemeris Astrology Engine
-// Direct WASM module calls to avoid CJS/ESM issues
+// Direct WASM module calls
 // ============================================
 
 import swissephWasmUrl from "@swisseph/browser/dist/swisseph.wasm?url";
+import { SwissEphemeris } from "@swisseph/browser";
 
 const Planet = {
   Sun: 0, Moon: 1, Mercury: 2, Venus: 3, Mars: 4,
@@ -31,7 +32,6 @@ export async function initSwissEph(): Promise<any> {
 
   initPromise = (async () => {
     try {
-      const { SwissEphemeris } = await import("@swisseph/browser");
       const swe = new SwissEphemeris();
       await swe.init(swissephWasmUrl);
 
@@ -378,3 +378,4 @@ export function getHemisphereDistribution(planets: PlanetPosition[], angles: Cha
 }
 
 export { Planet, SIGN_SYMBOLS };
+

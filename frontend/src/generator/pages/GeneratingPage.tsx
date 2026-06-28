@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import PrismBackground from "@/components/prism/PrismBackground";
 import PrismAnalysisAnimation from "@/components/prism/PrismAnalysisAnimation";
@@ -15,7 +14,6 @@ import { getOrderStatus, capturePayPalOrder } from "../services/paymentApi";
 
 export default function GeneratingPage() {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const [charCount, setCharCount] = useState(0);
   const [statusText, setStatusText] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -42,13 +40,13 @@ export default function GeneratingPage() {
     } else if (orderId && reportId) {
       await handlePaidGeneration(orderId, reportId, reportType);
     } else if (reportId) {
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;
     } else {
       const birthDataRaw = sessionStorage.getItem("taiji_birth_data");
       if (birthDataRaw) {
         await handlePreviewGeneration(JSON.parse(birthDataRaw), reportType);
       } else {
-        navigate("/generator", { replace: true });
+        window.location.href = "/generator";
       }
     }
   }
@@ -76,13 +74,13 @@ export default function GeneratingPage() {
         if (reportId) {
           await generateAiReport(reportId, reportType);
         }
-        navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`, { replace: true });
+        window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
       } else {
-        navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`, { replace: true });
+        window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
       }
     } catch (e) {
       console.error("PayPal capture error:", e);
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`, { replace: true });
+      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
     }
   }
 
@@ -94,15 +92,15 @@ export default function GeneratingPage() {
         if (status?.unlocked || status?.status === "paid") {
           trackFbPurchase({ eventId: orderId, value: status?.amount ? status.amount / 100 : 0, currency: "USD" });
           await generateAiReport(reportId, reportType);
-          navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+          window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;
           return;
         }
         await new Promise(r => setTimeout(r, 2000));
       }
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;
     } catch (e) {
       console.error("Error in paid generation:", e);
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;
     }
   }
 
@@ -162,12 +160,12 @@ export default function GeneratingPage() {
 
       await saveReportToServer({ reportId: rid, reportText: text, chartJson: natalChart, displayName: birthData.name || undefined, reportType: reportType as any }).catch(() => {});
 
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(rid)}`, { replace: true });
+      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(rid)}`;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("Error generating preview:", e);
       alert(t("genReportError", { message: msg }));
-      navigate("/generator", { replace: true });
+      window.location.href = "/generator";
     }
   }
 

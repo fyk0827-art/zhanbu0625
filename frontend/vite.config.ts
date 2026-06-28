@@ -61,9 +61,10 @@ export default defineConfig({
       keep_classnames: true,
       keep_fnames: true,
     },
-    modulePreload: { polyfill: false },
+
   },
   optimizeDeps: {
-    exclude: ["@swisseph/browser", "@swisseph/core"],
+    include: ["@swisseph/browser"],
+    exclude: ["@swisseph/core"],
   },
 })

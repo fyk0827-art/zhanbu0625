@@ -12,10 +12,10 @@ spring:
 
 payment:
   mode: paypal
-  order-amount: 2990
+  order-amount: 5999
   frontend-url: https://divinlove.com
   base-url: https://divinlove.com
   paypal:
-    client-id: AfXm2ti4T23Ys-DglNzOIIjEPFV9FUM6IjwOyBXyasNK6p2jyn8b7qyyrthuefIzub3Z4AQ5aEuqcWWK
-    secret: EERPl40QbcPqhwgt4YsqKPO6qdlHyP_jOeXY2ev0IRqO7LQxgbdxWiKPktRboI_A5R4Jl-zF0dldJUTW
-    mode: sandbox
+    client-id: ${PAYPAL_CLIENT_ID}
+    secret: ${PAYPAL_SECRET}
+    mode: ${PAYPAL_MODE:live}

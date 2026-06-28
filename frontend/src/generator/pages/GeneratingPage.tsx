@@ -7,10 +7,10 @@ import type { BirthData, NatalChart } from "../services/astrologyEngine";
 import { calculateNatalChart } from "../services/astrologyEngine";
 import { generateBirthReport500 } from "../services/birthReport500";
 import { getGlobalReportType, setGlobalReportType } from "../services/reportSession";
-import { savePreviewReportText, saveReportText, clearReportText, clearAiReportDone, saveReportId, saveBirthData } from "../services/reportStore";
-import { saveReportToServer } from "../services/reportApi";
-import { trackEvent, trackFbPurchase, getFbpCookie, getFbcCookie } from "../services/tracking";
-import { getRouterSearchParams, stripRouterPaymentParams } from "../utils/routerQuery";
+import { savePreviewReportText, saveReportText, saveReportId, saveBirthData } from "../services/reportStore";
+import { saveReportToServer, fetchReportFromServer } from "../services/reportApi";
+import { trackEvent, trackFbPurchase } from "../services/tracking";
+import { getRouterSearchParams } from "../utils/routerQuery";
 import { getOrderStatus, capturePayPalOrder } from "../services/paymentApi";
 
 export default function GeneratingPage() {
@@ -23,30 +23,46 @@ export default function GeneratingPage() {
   useEffect(() => {
     if (doneRef.current) return;
     doneRef.current = true;
+    run();
+  }, []);
 
+  async function run() {
     const params = getRouterSearchParams();
     const orderId = params.get("orderId");
     const reportId = params.get("reportId");
     const reportType = (params.get("reportType") as any) || getGlobalReportType();
     const token = params.get("token");
     const isPaypalReturn = Boolean(orderId && token);
-    const birthDataRaw = sessionStorage.getItem("taiji_birth_data");
-    const birthData: BirthData | null = birthDataRaw ? JSON.parse(birthDataRaw) : null;
-
     setGlobalReportType(reportType);
 
     if (isPaypalReturn && orderId && token) {
-      handlePaypalCapture(orderId, token, reportId, reportType);
+      await handlePaypalCapture(orderId, token, reportId, reportType);
     } else if (orderId && reportId) {
-      handlePaidGeneration(orderId, reportId, reportType);
-    } else if (birthData) {
-      handlePreviewGeneration(birthData, reportType);
+      await handlePaidGeneration(orderId, reportId, reportType);
     } else if (reportId) {
       navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
     } else {
-      navigate("/generator", { replace: true });
+      const birthDataRaw = sessionStorage.getItem("taiji_birth_data");
+      if (birthDataRaw) {
+        await handlePreviewGeneration(JSON.parse(birthDataRaw), reportType);
+      } else {
+        navigate("/generator", { replace: true });
+      }
     }
-  }, []);
+  }
+
+  async function getChart(): Promise<NatalChart | null> {
+    const cached = sessionStorage.getItem("taiji_chart_json");
+    if (cached) return JSON.parse(cached);
+    const birthRaw = sessionStorage.getItem("taiji_birth_data");
+    if (birthRaw) {
+      const birth = JSON.parse(birthRaw) as BirthData;
+      const chart = await calculateNatalChart(birth);
+      sessionStorage.setItem("taiji_chart_json", JSON.stringify(chart));
+      return chart;
+    }
+    return null;
+  }
 
   async function handlePaypalCapture(orderId: string, token: string, reportId: string | null, reportType: string) {
     try {
@@ -89,17 +105,26 @@ export default function GeneratingPage() {
   }
 
   async function generateAiReport(reportId: string, reportType: string) {
-    setStatusText(t("aiGenerating"));
-    const chartRaw = sessionStorage.getItem("taiji_chart_json");
-    const chart: NatalChart | null = chartRaw ? JSON.parse(chartRaw) : null;
-    if (chart) {
-      const { generateReportText } = await import("../services/reportGenerator");
-      const preview = await import("../services/reportStore").then(m => m.loadPreviewReportText(reportType as any));
-      const aiText = await generateReportText(chart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
+    setStatusText(t("preparingReport"));
+    const chart = await getChart();
+    if (!chart) {
+      const serverData = await fetchReportFromServer(reportId).catch(() => null);
+      if (serverData?.chartJson) {
+        sessionStorage.setItem("taiji_chart_json", JSON.stringify(serverData.chartJson));
+      }
+    }
+    const finalChart = await getChart();
+    if (!finalChart) return;
+    const { generateReportText } = await import("../services/reportGenerator");
+    const preview = await import("../services/reportStore").then(m => m.loadPreviewReportText(reportType as any));
+    try {
+      const aiText = await generateReportText(finalChart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
       if (aiText.trim()) {
         saveReportText(aiText, reportType as any);
         trackEvent("report_success", true);
       }
+    } catch (e) {
+      console.error("AI generation error:", e);
     }
   }
 
@@ -118,12 +143,12 @@ export default function GeneratingPage() {
       setCharCount(text.length);
 
       const { computeReportId } = await import("../services/reportId");
-      const reportId = await computeReportId(birthData, reportType as any);
-      saveReportId(reportId, reportType as any);
+      const rid = await computeReportId(birthData, reportType as any);
+      saveReportId(rid, reportType as any);
 
-      await saveReportToServer({ reportId, reportText: text, chartJson: natalChart, displayName: birthData.name || undefined, reportType: reportType as any }).catch(() => {});
+      await saveReportToServer({ reportId: rid, reportText: text, chartJson: natalChart, displayName: birthData.name || undefined, reportType: reportType as any }).catch(() => {});
 
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(rid)}`, { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("Error generating preview:", e);
@@ -140,9 +165,6 @@ export default function GeneratingPage() {
         {statusText && (
           <p className="text-sm" style={{ color: "var(--prism-cream)" }}>{statusText}</p>
         )}
-        <p className="text-xs opacity-70" style={{ color: "var(--prism-cream)" }}>
-          {charCount > 0 ? t("genReportGenerating") : t("genCalculatingChart")}
-        </p>
       </div>
     </div>
   );

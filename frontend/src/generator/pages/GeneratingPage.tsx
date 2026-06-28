@@ -7,7 +7,7 @@ import type { BirthData, NatalChart } from "../services/astrologyEngine";
 import { calculateNatalChart } from "../services/astrologyEngine";
 import { generateBirthReport500 } from "../services/birthReport500";
 import { getGlobalReportType, setGlobalReportType } from "../services/reportSession";
-import { savePreviewReportText, saveReportText, saveReportId, saveBirthData } from "../services/reportStore";
+import { savePreviewReportText, saveReportText, saveReportId, saveBirthData, markAiReportDone } from "../services/reportStore";
 import { saveReportToServer, fetchReportFromServer } from "../services/reportApi";
 import { trackEvent, trackFbPurchase } from "../services/tracking";
 import { getRouterSearchParams } from "../utils/routerQuery";
@@ -121,6 +121,7 @@ export default function GeneratingPage() {
       const aiText = await generateReportText(finalChart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
       if (aiText.trim()) {
         saveReportText(aiText, reportType as any);
+        markAiReportDone(reportType as any);
         trackEvent("report_success", true);
       }
     } catch (e) {

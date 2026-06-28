@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef, type ElementType } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+
+const APP_CACHE_VERSION = "v1";
 import {
   ArrowLeft, Settings, Download, Star, Heart, AlertTriangle, Users, Wallet, Home,
   Briefcase, Compass, KeyRound, Moon, Sparkles, Zap, CheckCircle2,
@@ -539,6 +541,12 @@ export default function BlueprintReport({ chart }: Props) {
   const [dynamicPrice, setDynamicPrice] = useState(getCachedPrice() || reportMeta.priceYuan);
 
   const [reportText, setReportText] = useState(() => {
+    // 缓存版本升级时清除旧 AI 缓存
+    const cacheVer = localStorage.getItem("_app_cache_version");
+    if (cacheVer !== APP_CACHE_VERSION) {
+      clearReportText(reportType);
+      localStorage.setItem("_app_cache_version", APP_CACHE_VERSION);
+    }
     // 比对指纹：如果用户换了邮箱/年龄/答题/出生数据，清除旧 AI 缓存
     const currentHash = sessionStorage.getItem("fp_hash");
     const storedHash = localStorage.getItem("fp_hash");

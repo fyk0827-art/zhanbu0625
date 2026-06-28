@@ -70,10 +70,11 @@ export function saveReportText(text: string, reportType: ReportTypeId = "full"):
 }
 
 export function loadInitialReportText(reportType: ReportTypeId = "full"): string {
+  const ai = loadReportText(reportType);
+  if (ai && isAiReportDone(reportType)) return ai;
   const preview = loadPreviewReportText(reportType);
   if (preview) return preview;
-  if (!isAiReportDone(reportType)) return "";
-  return loadReportText(reportType) || "";
+  return "";
 }
 
 export function loadReportText(reportType: ReportTypeId = "full"): string {

@@ -31,6 +31,7 @@ public class PaymentService {
     private final MetaCapiService metaCapi;
     private final com.qacollector.service.SettingsService settingsService;
     private final DeepSeekService deepSeekService;
+    private final ReportGenerationService reportGenerationService;
 
     public PaymentService(
             PaymentRepository repo,
@@ -40,7 +41,8 @@ public class PaymentService {
             EmailService emailService,
             MetaCapiService metaCapi,
             com.qacollector.service.SettingsService settingsService,
-            DeepSeekService deepSeekService
+            DeepSeekService deepSeekService,
+            ReportGenerationService reportGenerationService
     ) {
         this.repo = repo;
         this.props = props;
@@ -50,6 +52,7 @@ public class PaymentService {
         this.metaCapi = metaCapi;
         this.settingsService = settingsService;
         this.deepSeekService = deepSeekService;
+        this.reportGenerationService = reportGenerationService;
     }
 
     public boolean isDatabaseUp() {
@@ -196,13 +199,35 @@ public class PaymentService {
 
     @Async
     public void generateReportAsync(String reportId, GenerateReportRequest req) {
+        System.out.println("[PaymentService] Starting async gen for " + reportId);
         try {
             String chartJson = null;
             if (req.chartJson() != null) {
                 chartJson = objectMapper.writeValueAsString(req.chartJson());
             }
 
-            String aiText = deepSeekService.generate(req.systemPrompt(), req.userPrompt());
+            String aiText;
+            // 如果 prompts 为空，从数据库读 chart 自给自足
+            if ((req.systemPrompt() == null || req.systemPrompt().isBlank())
+                    && (req.chartJson() != null || chartJson != null)) {
+                System.out.println("[PaymentService] Empty prompts, generating from chart for " + reportId);
+                JsonNode chart = req.chartJson() != null ? req.chartJson()
+                    : (chartJson != null ? objectMapper.readTree(chartJson) : null);
+                aiText = reportGenerationService.generateFromChart(reportId, chart, req.displayName(), req.previewText());
+            } else if (req.systemPrompt() != null && !req.systemPrompt().isBlank()) {
+                aiText = deepSeekService.generate(req.systemPrompt(), req.userPrompt());
+            } else {
+                // 尝试从数据库 loader chart 再试
+                Optional<ReportRecord> report = repo.findReportById(reportId);
+                if (report.isPresent() && report.get().chartJson() != null && !report.get().chartJson().isBlank()) {
+                    System.out.println("[PaymentService] Empty prompts, building from DB chart for " + reportId);
+                    JsonNode chart = objectMapper.readTree(report.get().chartJson());
+                    aiText = reportGenerationService.generateFromChart(reportId, chart, req.displayName(), req.previewText());
+                } else {
+                    System.err.println("[PaymentService] No chart data available for " + reportId);
+                    return;
+                }
+            }
             if (aiText == null || aiText.isBlank()) {
                 System.err.println("[PaymentService] DeepSeek returned empty text for " + reportId);
                 return;

@@ -207,7 +207,7 @@ export default function HomePage() {
               <span className="prism-font-serif text-[13px] font-semibold" style={{ color: "rgba(250,246,240,0.7)" }}>
                 {t("genBirthPlace")} <span style={{ color: "var(--prism-gold)" }}>*</span>
               </span>
-              <span className="text-[11px] italic" style={{ color: "rgba(232,185,81,0.35)" }}>{t("genBirthPlaceHint")}</span>
+              <span className="text-[11px] italic" style={{ color: "rgba(232,185,81,0.35)" }}>{t("genOptional")}</span>
             </div>
             {useCustomCoords ? (
               <div className="flex gap-2 items-start">
@@ -223,13 +223,13 @@ export default function HomePage() {
               <LocationPicker value={selectedLocation} onChange={selectLocation} />
             )}
             <button type="button" onClick={() => setUseCustomCoords(!useCustomCoords)} className="text-[11px] mt-2 hover:underline" style={{ color: "rgba(232,185,81,0.6)" }}>
-              {useCustomCoords ? t("genSelectFromCity") : t("genEnterCoords")}
+              {useCustomCoords ? t("genUseCityList") : t("genManualCoords")}
             </button>
-            {fieldErrors.city && <p className="text-xs mt-1" style={{ color: "var(--prism-danger)" }}>{t("genCityRequired")}</p>}
+            {fieldErrors.city && <p className="text-xs mt-1" style={{ color: "var(--prism-danger)" }}>{t("genLocationRequired", "Please select a city")}</p>}
           </div>
 
           <button type="button" className="prism-btn-gold w-full mt-7" onClick={handleSubmit}>
-            {t("genConnectStars")}
+            {t("genConnectChart")}
           </button>
         </div>
 

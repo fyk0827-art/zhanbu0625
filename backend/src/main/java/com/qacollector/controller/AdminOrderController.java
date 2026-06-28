@@ -27,7 +27,7 @@ public class AdminOrderController {
         Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM orders", Integer.class);
 
         List<Map<String, Object>> items = jdbc.query(
-            "SELECT id, report_id, amount, title, channel, status, trade_no, payer_contact, created_at, paid_at " +
+            "SELECT id, report_id, amount, title, channel, status, trade_no, payer_contact, created_at, paid_at, email_sent " +
             "FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?",
             (rs, rowNum) -> {
                 Map<String, Object> m = new LinkedHashMap<>();
@@ -42,6 +42,7 @@ public class AdminOrderController {
                 m.put("payerContact", rs.getString("payer_contact"));
                 m.put("createdAt", rs.getLong("created_at"));
                 m.put("paidAt", rs.getLong("paid_at"));
+                m.put("emailSent", rs.getBoolean("email_sent"));
                 return m;
             },
             pageSize, offset

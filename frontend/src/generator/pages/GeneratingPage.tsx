@@ -12,6 +12,8 @@ import { trackEvent, trackFbPurchase } from "../services/tracking";
 import { getRouterSearchParams } from "../utils/routerQuery";
 import { getOrderStatus, capturePayPalOrder } from "../services/paymentApi";
 
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
+
 export default function GeneratingPage() {
   const { t, i18n } = useTranslation();
   const [charCount, setCharCount] = useState(0);
@@ -105,12 +107,6 @@ export default function GeneratingPage() {
   }
 
   async function generateAiReport(reportId: string, reportType: string) {
-    const trace = (msg: string) => {
-      console.log(`[GenTrace ${Date.now()}] ${msg}`);
-      setStatusText(t("preparingReport") + " (" + msg + ")");
-    };
-    trace("start");
-    sessionStorage.setItem("ai_gen_started", Date.now().toString());
     setStatusText(t("preparingReport"));
     const totalSec = 180 + Math.floor(Math.random() * 21);
     setCountdown(totalSec);
@@ -121,48 +117,44 @@ export default function GeneratingPage() {
         return parseFloat((prev - 0.1).toFixed(1));
       });
     }, 100);
-    trace("getChart...");
     const chart = await getChart();
-    trace("getChart done: " + (chart ? "found" : "null"));
     if (!chart) {
-      trace("fetchReportFromServer...");
       const ac = new AbortController();
-      const to = setTimeout(() => { trace("fetchReportFromServer TIMEOUT 30s"); ac.abort(); }, 30000);
+      const to = setTimeout(() => ac.abort(), 30000);
       const serverData = await fetchReportFromServer(reportId, ac.signal).catch(() => null);
       clearTimeout(to);
-      trace("fetchReportFromServer done: " + (serverData ? JSON.stringify({hasReport: serverData.hasReport, hasChart: !!serverData.chartJson, unlocked: serverData.unlocked}) : "null"));
       if (serverData?.chartJson) {
         sessionStorage.setItem("taiji_chart_json", JSON.stringify(serverData.chartJson));
-        trace("chartJson saved to sessionStorage");
       }
     }
-    trace("getChart final...");
     const finalChart = await getChart();
-    trace("getChart final: " + (finalChart ? "found" : "null"));
-    if (!finalChart) {
-      trace("NO CHART — returning early, should navigate now");
-      return;
-    }
-    trace("importing generateReportText...");
-    const { generateReportText } = await import("../services/reportGenerator");
+    if (!finalChart) return;
+    const { generateReportText, buildPromptsForReportType, resolveSystemPrompt } = await import("../services/reportGenerator");
+    const { fetchReportPrompts } = await import("../services/reportPromptApi");
     const preview = await import("../services/reportStore").then(m => m.loadPreviewReportText(reportType as any));
-    trace("preview loaded, calling DeepSeek...");
+    const previewEn = preview?.trim() ? await import("../services/birthReport500").then(m => m.generateBirthReport500(finalChart, "en")) : undefined;
     try {
-      const aiText = await generateReportText(finalChart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
-      trace("DeepSeek done, length: " + aiText.length);
-      if (aiText.trim()) {
-        saveReportText(aiText, reportType as any);
-        markAiReportDone(reportType as any);
-        trackEvent("report_success", true);
-        trace("AI text saved");
-      }
-    } catch (e: any) {
-      console.error("AI generation error:", e);
-      trace("DeepSeek ERROR: " + (e?.message || String(e)));
-    } finally {
-      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
-      sessionStorage.removeItem("ai_gen_started");
-      trace("finally done");
+      const calcResult = await import("../services/v2ScoringEngine").then(m => m.runV2Calculations(finalChart, "en"));
+      const prompts = buildPromptsForReportType(reportType as any, finalChart, calcResult, previewEn, "en");
+      const dbPrompts = await fetchReportPrompts();
+      const sp = resolveSystemPrompt(reportType as any, dbPrompts.prompts, "en");
+      const userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
+      const birthData = finalChart.birthData;
+      const displayName = birthData?.name || undefined;
+      await fetch(`${API_BASE}/api/reports/${encodeURIComponent(reportId)}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemPrompt: sp,
+          userPrompt: prompts.user,
+          previewText: preview || "",
+          displayName,
+          userEmail,
+        }),
+      });
+      trackEvent("report_submitted", true);
+    } catch (e) {
+      console.error("Failed to submit generation request:", e);
     }
   }
 

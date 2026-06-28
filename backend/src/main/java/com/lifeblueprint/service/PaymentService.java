@@ -10,7 +10,9 @@ import com.lifeblueprint.domain.ReportRecord;
 import com.lifeblueprint.domain.UnlockRecord;
 import com.lifeblueprint.repository.PaymentRepository;
 import com.lifeblueprint.web.dto.CreateOrderRequest;
+import com.lifeblueprint.web.dto.GenerateReportRequest;
 import com.lifeblueprint.web.dto.SaveReportRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -25,6 +27,10 @@ public class PaymentService {
     private final PaymentProperties props;
     private final PaypalService paypal;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
+    private final MetaCapiService metaCapi;
+    private final com.qacollector.service.SettingsService settingsService;
+    private final DeepSeekService deepSeekService;
 
     public PaymentService(
             PaymentRepository repo,
@@ -33,7 +39,8 @@ public class PaymentService {
             ObjectMapper objectMapper,
             EmailService emailService,
             MetaCapiService metaCapi,
-            com.qacollector.service.SettingsService settingsService
+            com.qacollector.service.SettingsService settingsService,
+            DeepSeekService deepSeekService
     ) {
         this.repo = repo;
         this.props = props;
@@ -42,6 +49,7 @@ public class PaymentService {
         this.emailService = emailService;
         this.metaCapi = metaCapi;
         this.settingsService = settingsService;
+        this.deepSeekService = deepSeekService;
     }
 
     public boolean isDatabaseUp() {
@@ -110,10 +118,6 @@ public class PaymentService {
         });
         return body;
     }
-
-    private final EmailService emailService;
-    private final MetaCapiService metaCapi;
-    private final com.qacollector.service.SettingsService settingsService;
 
     public void saveReport(String reportId, SaveReportRequest req) {
         String chartJson = null;
@@ -188,6 +192,42 @@ public class PaymentService {
                 repo.findOrdersByReportId(reportId).stream().map(this::orderPayload).toList()
         );
         return body;
+    }
+
+    @Async
+    public void generateReportAsync(String reportId, GenerateReportRequest req) {
+        try {
+            String chartJson = null;
+            if (req.chartJson() != null) {
+                chartJson = objectMapper.writeValueAsString(req.chartJson());
+            }
+
+            String aiText = deepSeekService.generate(req.systemPrompt(), req.userPrompt());
+            if (aiText == null || aiText.isBlank()) {
+                System.err.println("[PaymentService] DeepSeek returned empty text for " + reportId);
+                return;
+            }
+
+            repo.upsertReport(reportId, aiText, chartJson, req.displayName());
+
+            List<OrderRecord> orders = repo.findOrdersByReportId(reportId);
+            for (OrderRecord order : orders) {
+                if (order.status() == OrderStatus.paid && order.payerContact() != null && !order.payerContact().isBlank()) {
+                    try {
+                        emailService.sendReport(order.payerContact(), reportId, aiText, req.displayName());
+                        repo.markEmailSent(order.id());
+                    } catch (Exception e) {
+                        System.err.println("[PaymentService] Failed to send email for " + order.id() + ": " + e.getMessage());
+                    }
+                    break;
+                }
+            }
+
+            System.out.println("[PaymentService] Async generation complete for " + reportId);
+        } catch (Exception e) {
+            System.err.println("[PaymentService] Async generation failed for " + reportId + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public Map<String, Object> createOrder(CreateOrderRequest req, String userAgent) {
@@ -283,15 +323,6 @@ public class PaymentService {
         }
         OrderRecord o = order.get();
         metaCapi.sendPurchase(o, clientIp, userAgent, o.fbp(), o.fbc());
-        repo.findReportById(o.reportId()).ifPresent(report -> {
-            if (o.payerContact() != null && !o.payerContact().isBlank()) {
-                try {
-                    emailService.sendReport(o.payerContact(), o.reportId(), report.reportText(), report.displayName());
-                } catch (Exception e) {
-                    // Log but don't fail the capture
-                }
-            }
-        });
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("ok", true);
         body.put("orderId", o.id());

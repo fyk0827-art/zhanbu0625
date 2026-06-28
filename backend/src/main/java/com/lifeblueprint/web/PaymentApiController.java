@@ -5,6 +5,7 @@ import com.lifeblueprint.domain.OrderRecord;
 import com.lifeblueprint.service.EmailService;
 import com.lifeblueprint.service.PaymentService;
 import com.lifeblueprint.web.dto.CreateOrderRequest;
+import com.lifeblueprint.web.dto.GenerateReportRequest;
 import com.lifeblueprint.web.dto.SaveReportRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -87,6 +88,15 @@ public class PaymentApiController {
         String clientIp = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
         return paymentService.capturePayPalOrder(orderId, paypalOrderId, clientIp, userAgent);
+    }
+
+    @PostMapping("/reports/{reportId}/generate")
+    public Map<String, Object> queueGeneration(
+            @PathVariable String reportId,
+            @RequestBody GenerateReportRequest req
+    ) {
+        paymentService.generateReportAsync(reportId, req);
+        return Map.of("ok", true, "reportId", reportId);
     }
 
     @PostMapping("/notify/alipay")

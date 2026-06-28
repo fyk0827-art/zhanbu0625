@@ -766,6 +766,23 @@ export default function BlueprintReport({ chart }: Props) {
     };
   }, [reportId, isUnlocked]);
 
+  /** 轮询：后端生成 AI 报告完成后自动加载 */
+  useEffect(() => {
+    if (!reportId || !isUnlocked || hasAiReport) return;
+    const timer = setInterval(async () => {
+      try {
+        const data = await fetchReportFromServer(reportId);
+        if (data?.reportText && !isPreviewReport500(data.reportText)) {
+          setReportText(data.reportText);
+          setGlobalReportText(data.reportText);
+          saveReportText(data.reportText);
+          clearInterval(timer);
+        }
+      } catch { /* ignore */ }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [reportId, isUnlocked, hasAiReport]);
+
   /** 将本地报告同步到数据库（生成后、支付前也可存） */
   useEffect(() => {
     if (!reportId || !reportText || !activeChart) return;

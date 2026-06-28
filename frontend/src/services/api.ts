@@ -148,6 +148,7 @@ export interface OrderAdminDTO {
   payerContact: string | null;
   createdAt: number;
   paidAt: number | null;
+  emailSent: boolean;
 }
 
 export const orderApi = {

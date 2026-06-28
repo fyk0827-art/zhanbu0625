@@ -121,6 +121,10 @@ public class PaymentRepository {
         );
     }
 
+    public void markEmailSent(String orderId) {
+        jdbc.update("UPDATE orders SET email_sent = 1 WHERE id = ?", orderId);
+    }
+
     public Optional<UnlockRecord> findUnlockByReportId(String reportId) {
         try {
             return Optional.ofNullable(jdbc.queryForObject(

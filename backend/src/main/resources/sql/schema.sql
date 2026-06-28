@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS orders (
   payer_contact VARCHAR(128) NULL,
   created_at BIGINT NOT NULL,
   paid_at BIGINT NULL,
+  email_sent TINYINT(1) NOT NULL DEFAULT 0,
   INDEX idx_orders_report_id (report_id),
   INDEX idx_orders_status (status),
   INDEX idx_orders_trade_no (trade_no),

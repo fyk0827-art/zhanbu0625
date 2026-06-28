@@ -592,6 +592,7 @@ function OrdersTab() {
               <th className="px-4 py-3 text-left font-medium text-[#6B6560]">{t("channel")}</th>
               <th className="px-4 py-3 text-left font-medium text-[#6B6560]">{t("status")}</th>
               <th className="px-4 py-3 text-left font-medium text-[#6B6560]">{t("tradeNo")}</th>
+              <th className="px-4 py-3 text-left font-medium text-[#6B6560]">邮件</th>
               <th className="px-4 py-3 text-left font-medium text-[#6B6560]">{t("date")}</th>
             </tr>
           </thead>
@@ -606,6 +607,7 @@ function OrdersTab() {
                   <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(o.status)}`}>{o.status}</span>
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-[#6B6560]">{o.tradeNo || "-"}</td>
+                <td className="px-4 py-3 text-xs">{o.emailSent ? "✅ 已发送" : "⏳ 待发送"}</td>
                 <td className="px-4 py-3 text-xs text-[#6B6560]">{o.createdAt ? new Date(o.createdAt).toLocaleString() : "-"}</td>
               </tr>
             ))}

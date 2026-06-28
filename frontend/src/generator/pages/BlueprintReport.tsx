@@ -583,7 +583,10 @@ export default function BlueprintReport({ chart }: Props) {
   useEffect(() => {
     if (isUnlocked) return;
     if (reportText && !isPreviewReport500(reportText)) {
-      setReportText(loadPreviewReportText(reportType) || "");
+      const hasPendingOrder = Boolean(getRouterSearchParams().get("orderId"));
+      if (!hasPendingOrder) {
+        setReportText(loadPreviewReportText(reportType) || "");
+      }
     }
   }, [isUnlocked, reportType]);
 

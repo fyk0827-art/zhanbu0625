@@ -35,19 +35,25 @@ export default function GeneratingPage() {
     const reportType = (params.get("reportType") as any) || getGlobalReportType();
     const token = params.get("token");
     const isPaypalReturn = Boolean(orderId && token);
+    console.log("[GenPage] run: orderId=" + orderId + " reportId=" + reportId + " reportType=" + reportType + " isPaypalReturn=" + isPaypalReturn);
     setGlobalReportType(reportType);
 
     if (isPaypalReturn && orderId && token) {
+      console.log("[GenPage] path: paypal return, orderId=" + orderId + " reportId=" + reportId);
       await handlePaypalCapture(orderId, token, reportId, reportType);
     } else if (orderId && reportId) {
+      console.log("[GenPage] path: paid generation, orderId=" + orderId + " reportId=" + reportId);
       await handlePaidGeneration(orderId, reportId, reportType);
     } else if (reportId) {
+      console.log("[GenPage] path: direct to final-report, reportId=" + reportId);
       window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`;
     } else {
       const birthDataRaw = sessionStorage.getItem("taiji_birth_data");
       if (birthDataRaw) {
+        console.log("[GenPage] path: preview generation");
         await handlePreviewGeneration(JSON.parse(birthDataRaw), reportType);
       } else {
+        console.log("[GenPage] path: no data, redirect to /generator");
         window.location.href = "/generator";
       }
     }
@@ -67,28 +73,35 @@ export default function GeneratingPage() {
   }
 
   async function handlePaypalCapture(orderId: string, token: string, reportId: string | null, reportType: string) {
+    console.log("[GenPage] handlePaypalCapture: orderId=" + orderId + " reportId=" + reportId);
     try {
       setStatusText(t("confirmingPayment"));
       const result = await capturePayPalOrder(orderId, token);
+      console.log("[GenPage] capturePayPalOrder done: unlocked=" + result.unlocked);
       if (result.unlocked) {
         trackFbPurchase({ eventId: orderId, value: 0, currency: "USD" });
         trackEvent("pay_success", true);
         if (reportId) {
           await generateAiReport(reportId, reportType);
         }
-        window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
+        const target = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
+        console.log("[GenPage] navigate to: " + target);
+        window.location.href = target;
       } else {
-        window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
+        const target = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
+        console.log("[GenPage] not unlocked, navigate to: " + target);
+        window.location.href = target;
       }
     } catch (e) {
-      console.error("PayPal capture error:", e);
-      window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
+      console.error("[GenPage] PayPal capture error:", e);
+      const target = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`;
+      window.location.href = target;
     }
   }
 
   async function handlePaidGeneration(orderId: string, reportId: string, reportType: string) {
+    console.log("[GenPage] handlePaidGeneration: orderId=" + orderId + " reportId=" + reportType);
     try {
-      setStatusText(t("confirmingPayment"));
       for (let i = 0; i < 30; i++) {
         const status = await getOrderStatus(orderId).catch(() => null);
         if (status?.unlocked || status?.status === "paid") {
@@ -177,6 +190,21 @@ export default function GeneratingPage() {
       saveReportId(rid, reportType as any);
 
       await saveReportToServer({ reportId: rid, reportText: text, chartJson: natalChart, displayName: birthData.name || undefined, reportType: reportType as any }).catch(() => {});
+
+      // 存储会话指纹
+      const fingerprint = [
+        sessionStorage.getItem("fp_email") || "",
+        sessionStorage.getItem("fp_age") || "",
+        sessionStorage.getItem("fp_answers") || "",
+        birthData.name || "",
+        birthData.gender || "",
+        birthData.year, birthData.month, birthData.day,
+        birthData.hour, birthData.minute,
+        birthData.latitude, birthData.longitude,
+        birthData.timezone,
+      ].map(String).join("|");
+      sessionStorage.setItem("fp_hash", btoa(fingerprint));
+      console.log("[GenPage] fingerprint saved, len=" + fingerprint.length);
 
       window.location.href = `/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(rid)}`;
     } catch (e) {

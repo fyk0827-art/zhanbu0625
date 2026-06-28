@@ -538,9 +538,19 @@ export default function BlueprintReport({ chart }: Props) {
   const reportMeta = getReportTypeMeta(reportType);
   const [dynamicPrice, setDynamicPrice] = useState(getCachedPrice() || reportMeta.priceYuan);
 
-  const [reportText, setReportText] = useState(
-    () => loadInitialReportText(reportType) || getGlobalReportText() || ""
-  );
+  const [reportText, setReportText] = useState(() => {
+    // 比对指纹：如果用户换了邮箱/年龄/答题/出生数据，清除旧 AI 缓存
+    const currentHash = sessionStorage.getItem("fp_hash");
+    const storedHash = localStorage.getItem("fp_hash");
+    if (currentHash && storedHash && currentHash !== storedHash) {
+      console.log("[BPR] fingerprint changed, clearing cached AI report");
+      clearReportText(reportType);
+      localStorage.setItem("fp_hash", currentHash);
+    } else if (currentHash) {
+      localStorage.setItem("fp_hash", currentHash);
+    }
+    return loadInitialReportText(reportType) || getGlobalReportText() || "";
+  });
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [genCharCount, setGenCharCount] = useState(0);
@@ -579,6 +589,11 @@ export default function BlueprintReport({ chart }: Props) {
     setPaying,
     refresh: refreshUnlock,
   } = useReportUnlock(reportId, { reportType });
+
+  // 挂载日志
+  useEffect(() => {
+    console.log("[BPR] mount: reportId=" + reportId + " hasAi=" + hasAiReport + " isPaid=" + isPaid + " hasChart=" + !!activeChart);
+  }, []);
 
   useEffect(() => {
     if (isUnlocked) return;
@@ -769,18 +784,22 @@ export default function BlueprintReport({ chart }: Props) {
   /** 轮询：后端生成 AI 报告完成后自动加载 */
   useEffect(() => {
     if (!reportId || !isUnlocked || hasAiReport) return;
+    console.log("[BP Poll] start polling for reportId=" + reportId);
     const timer = setInterval(async () => {
       try {
         const data = await fetchReportFromServer(reportId);
         if (data?.reportText && !isPreviewReport500(data.reportText)) {
+          console.log("[BP Poll] found AI text, length=" + data.reportText.length);
           setReportText(data.reportText);
           setGlobalReportText(data.reportText);
           saveReportText(data.reportText);
           clearInterval(timer);
+        } else {
+          console.log("[BP Poll] still waiting, hasReport=" + data?.hasReport + " unlocked=" + data?.unlocked + " textLen=" + (data?.reportText?.length ?? 0));
         }
-      } catch { /* ignore */ }
+      } catch (e) { /* ignore */ }
     }, 5000);
-    return () => clearInterval(timer);
+    return () => { console.log("[BP Poll] stop polling"); clearInterval(timer); };
   }, [reportId, isUnlocked, hasAiReport]);
 
   /** 将本地报告同步到数据库（生成后、支付前也可存） */

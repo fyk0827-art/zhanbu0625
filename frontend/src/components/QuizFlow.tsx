@@ -52,6 +52,7 @@ export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
     }
     setEmailError("");
     localStorage.setItem("userEmail", email);
+    sessionStorage.setItem("fp_email", email);
     trackEvent("email_submit", true);
     fetch("/api/collect-email", {
       method: "POST",
@@ -92,6 +93,7 @@ export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
     if (isNaN(age) || age < 0 || age > 120) { setAgeError(t("invalidAge")); return; }
     setAgeError("");
     trackEvent("age_submit", true);
+    sessionStorage.setItem("fp_age", userAge);
     const group = determineAgeGroup(age);
     if (!group) { setAgeError(t("noAgeGroupMatch")); return; }
     setMatchedGroup(group);
@@ -106,6 +108,8 @@ export default function QuizFlow({ ageGroups, onClose }: QuizFlowProps) {
     const qList = fetchedQuestions || [];
     const newSelections = { ...selections, [qId]: key };
     setSelections(newSelections);
+    sessionStorage.setItem("fp_answers", JSON.stringify(Object.values(newSelections)));
+    console.log("[QuizFlow] answered " + (Object.keys(newSelections).length) + "/" + qList.length);
     setTimeout(() => {
       if (currentQIndex < qList.length - 1) {
         setCurrentQIndex((p) => p + 1);

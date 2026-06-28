@@ -4,7 +4,7 @@ export const PAYMENT_DISABLED = import.meta.env.VITE_PAYMENT_DISABLED === "true"
 
 export type PaymentMode = "mock" | "paypal" | "disabled";
 
-export function getPaymentLabels(mode: PaymentMode | null | undefined) {
+export function getPaymentLabels(mode: PaymentMode) {
   switch (mode) {
     case "paypal":
       return {

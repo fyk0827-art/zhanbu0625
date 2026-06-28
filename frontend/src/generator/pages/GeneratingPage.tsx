@@ -18,6 +18,8 @@ export default function GeneratingPage() {
   const navigate = useNavigate();
   const [charCount, setCharCount] = useState(0);
   const [statusText, setStatusText] = useState("");
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneRef = useRef(false);
 
   useEffect(() => {
@@ -106,6 +108,15 @@ export default function GeneratingPage() {
 
   async function generateAiReport(reportId: string, reportType: string) {
     setStatusText(t("preparingReport"));
+    const totalSec = 180 + Math.floor(Math.random() * 21);
+    setCountdown(totalSec);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev === null || prev <= 0) { return 0; }
+        return parseFloat((prev - 0.1).toFixed(1));
+      });
+    }, 100);
     const chart = await getChart();
     if (!chart) {
       const serverData = await fetchReportFromServer(reportId).catch(() => null);
@@ -126,6 +137,8 @@ export default function GeneratingPage() {
       }
     } catch (e) {
       console.error("AI generation error:", e);
+    } finally {
+      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     }
   }
 
@@ -162,7 +175,7 @@ export default function GeneratingPage() {
     <div className="prism-root min-h-screen relative overflow-hidden">
       <PrismBackground />
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <PrismAnalysisAnimation charCount={charCount} />
+        <PrismAnalysisAnimation charCount={charCount} countdown={countdown} />
         {statusText && (
           <p className="text-sm" style={{ color: "var(--prism-cream)" }}>{statusText}</p>
         )}

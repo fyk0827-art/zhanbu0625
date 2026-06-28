@@ -34,8 +34,8 @@ export function useReportUnlock(
   const [error, setError] = useState<string | null>(null);
   const [confirmingReturn, setConfirmingReturn] = useState(false);
   const [pollExhausted, setPollExhausted] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<PaymentMode | null>(
-    PAYMENT_DISABLED ? "disabled" : null
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>(
+    PAYMENT_DISABLED ? "disabled" : "paypal"
   );
   const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
   const { t } = useTranslation();

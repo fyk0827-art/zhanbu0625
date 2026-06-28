@@ -12,9 +12,10 @@ const STEP_KEYS = [
 
 interface Props {
   charCount?: number;
+  countdown?: number | null;
 }
 
-export default function PrismAnalysisAnimation({ charCount = 0 }: Props) {
+export default function PrismAnalysisAnimation({ charCount = 0, countdown }: Props) {
   const { t } = useTranslation();
   const [stepIdx, setStepIdx] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -44,6 +45,13 @@ export default function PrismAnalysisAnimation({ charCount = 0 }: Props) {
           className="absolute top-1/2 left-1/2 w-3 h-3 -mt-1.5 -ml-1.5 rounded-full"
           style={{ background: "var(--prism-gold)", boxShadow: "0 0 30px rgba(232,185,81,0.4)" }}
         />
+        {countdown !== null && countdown > 0 && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-6">
+            <span className="text-lg font-mono" style={{ color: "var(--prism-gold)" }}>
+              {countdown.toFixed(1)}s
+            </span>
+          </div>
+        )}
       </div>
       <p
         className="prism-font-serif text-base leading-relaxed transition-opacity duration-300"

@@ -16,7 +16,7 @@ import { runV2Calculations } from "../services/v2ScoringEngine";
 import { computeReportId } from "../services/reportId";
 import { useReportUnlock } from "../hooks/useReportUnlock";
 import { getPaymentLabels } from "../services/paymentApi";
-import { fetchReportPrice } from "../services/reportPrice";
+import { fetchReportPrice, getCachedPrice } from "../services/reportPrice";
 import { trackEvent } from "../services/tracking";
 import { stripChinese } from "../services/reportGenerator";
 import { getRouterSearchParams } from "../utils/routerQuery";
@@ -536,7 +536,7 @@ export default function BlueprintReport({ chart }: Props) {
     getRouterSearchParams().get("reportType") || getGlobalReportType()
   );
   const reportMeta = getReportTypeMeta(reportType);
-  const [dynamicPrice, setDynamicPrice] = useState(reportMeta.priceYuan);
+  const [dynamicPrice, setDynamicPrice] = useState(getCachedPrice() || reportMeta.priceYuan);
 
   const [reportText, setReportText] = useState(
     () => loadInitialReportText(reportType) || getGlobalReportText() || ""

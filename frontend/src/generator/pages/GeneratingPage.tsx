@@ -132,10 +132,7 @@ export default function GeneratingPage() {
     }, 100);
     const chart = await getChart();
     if (!chart) {
-      const ac = new AbortController();
-      const to = setTimeout(() => ac.abort(), 30000);
-      const serverData = await fetchReportFromServer(reportId, ac.signal).catch(() => null);
-      clearTimeout(to);
+      const serverData = await fetchReportFromServer(reportId).catch(() => null);
       if (serverData?.chartJson) {
         sessionStorage.setItem("taiji_chart_json", JSON.stringify(serverData.chartJson));
       }
@@ -145,6 +142,7 @@ export default function GeneratingPage() {
     let userPrompt = "";
     let previewText = "";
     let displayName = "";
+    let chartJsonPayload = null;
     let userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
     if (finalChart) {
       try {
@@ -159,16 +157,17 @@ export default function GeneratingPage() {
         userPrompt = prompts.user;
         previewText = preview || "";
         displayName = finalChart.birthData?.name || undefined;
+        chartJsonPayload = finalChart;
       } catch (e) {
         console.error("[GenPage] Failed to build prompts:", e);
       }
     }
-    // 始终提交到后端生成（即使 chart 为空，后端也能处理）
+    // 始终提交到后端生成（带 chartJson 作为后备）
     try {
       await fetch(`${API_BASE}/api/reports/${encodeURIComponent(reportId)}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemPrompt, userPrompt, previewText, displayName, userEmail }),
+        body: JSON.stringify({ systemPrompt, userPrompt, previewText, displayName, userEmail, chartJson: chartJsonPayload }),
       });
       trackEvent("report_submitted", true);
     } catch (e) {

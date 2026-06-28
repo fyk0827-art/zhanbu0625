@@ -119,6 +119,7 @@ export const adminQuestionApi = {
   update: (id: number, req: CreateQuestionRequest) =>
     put<void>(`/admin/questions/${id}`, req),
   delete: (id: number) => del<void>(`/admin/questions/${id}`),
+  clearCache: () => post<void>("/admin/questions/clear-cache", {}),
 };
 
 // ======== Answer API ========

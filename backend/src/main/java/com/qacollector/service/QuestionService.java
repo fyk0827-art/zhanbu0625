@@ -4,11 +4,14 @@ import com.qacollector.dto.*;
 import com.qacollector.entity.*;
 import com.qacollector.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,16 +24,17 @@ public class QuestionService {
     private final AgeGroupRepository ageGroupRepository;
     private final AnswerRepository answerRepository;
 
-    public List<QuestionDTO> getRandomQuestions(Long ageGroupId, String language, int limit) {
-        List<Question> questions = questionRepository.findRandomByAgeGroupId(ageGroupId, limit);
+    @Cacheable("questionBank")
+    public List<QuestionDTO> loadAllQuestionDTOs(Long ageGroupId, String language) {
+        List<Question> questions = questionRepository.findByAgeGroupId(ageGroupId);
         List<QuestionDTO> result = new ArrayList<>();
 
         for (Question q : questions) {
+            if (!Boolean.TRUE.equals(q.getIsActive())) continue;
             QuestionDTO dto = new QuestionDTO();
             dto.setId(q.getId());
             dto.setAgeGroupId(q.getAgeGroupId());
 
-            // Get translation - try requested language, fallback to English
             Optional<QuestionTranslation> trans = translationRepository
                 .findByQuestionIdAndLanguageCode(q.getId(), language);
             if (trans.isEmpty() && !"en".equals(language)) {
@@ -40,7 +44,6 @@ public class QuestionService {
             dto.setDescription(trans.map(QuestionTranslation::getDescription).orElse(""));
             dto.setIsActive(q.getIsActive());
 
-            // Get age group
             AgeGroup ag = ageGroupRepository.findById(q.getAgeGroupId()).orElse(null);
             if (ag != null) {
                 AgeGroupDTO agDto = new AgeGroupDTO();
@@ -52,7 +55,6 @@ public class QuestionService {
                 dto.setAgeGroup(agDto);
             }
 
-            // Get options
             List<QuestionOption> opts = optionRepository.findByQuestionIdOrderByOptionKeyAsc(q.getId());
             List<OptionDTO> optDtos = new ArrayList<>();
             for (QuestionOption o : opts) {
@@ -66,6 +68,16 @@ public class QuestionService {
             result.add(dto);
         }
         return result;
+    }
+
+    public List<QuestionDTO> getRandomQuestions(Long ageGroupId, String language, int limit) {
+        List<QuestionDTO> all = loadAllQuestionDTOs(ageGroupId, language);
+        Collections.shuffle(all);
+        return all.subList(0, Math.min(limit, all.size()));
+    }
+
+    public void clearQuestionCache() {
+        // Called via controller to evict cache
     }
 
     public List<AdminQuestionDTO> getAllQuestionsAdmin() {

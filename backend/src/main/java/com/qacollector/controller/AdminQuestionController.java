@@ -3,9 +3,11 @@ package com.qacollector.controller;
 import com.qacollector.dto.*;
 import com.qacollector.service.QuestionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/questions")
@@ -34,5 +36,11 @@ public class AdminQuestionController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         questionService.deleteQuestion(id);
         return ApiResponse.ok(null);
+    }
+
+    @PostMapping("/clear-cache")
+    @CacheEvict(value = "questionBank", allEntries = true)
+    public Map<String, Object> clearCache() {
+        return Map.of("ok", true, "message", "Question cache cleared");
     }
 }

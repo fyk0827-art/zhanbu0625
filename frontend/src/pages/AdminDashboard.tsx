@@ -90,6 +90,7 @@ function QuestionsTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [cacheMsg, setCacheMsg] = useState("");
   const [formData, setFormData] = useState({
     ageGroupId: 0,
     title: "",
@@ -193,7 +194,19 @@ function QuestionsTab() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-['Fredoka'] text-lg text-[#2D2A26]">{t("questions")}</h2>
-        <button
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              adminQuestionApi.clearCache().then(() => {
+                setCacheMsg("已清除");
+                setTimeout(() => setCacheMsg(""), 2000);
+              });
+            }}
+            className="flex items-center gap-1.5 rounded-full border border-[#E8E4DC] px-3 py-2 text-xs font-medium text-[#6B6560] transition-colors hover:bg-[#FFFDF5]"
+          >
+            Refresh Cache {cacheMsg}
+          </button>
+          <button
           onClick={() => { resetForm(); setShowForm(true); }}
           className="flex items-center gap-1.5 rounded-full bg-[#E8C547] px-4 py-2 text-sm font-medium text-[#2D2A26] transition-transform hover:scale-[1.02]"
         >
@@ -201,6 +214,7 @@ function QuestionsTab() {
           {t("createQuestion")}
         </button>
       </div>
+    </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="mb-6 rounded-xl border border-[#E8E4DC] bg-white p-6">

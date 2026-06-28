@@ -8,7 +8,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-} from "./ui/drawer";
+} from "@/components/ui/drawer";
 
 const ITEM_HEIGHT = 44;
 const WHEEL_PADDING = ITEM_HEIGHT * 2;

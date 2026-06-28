@@ -579,7 +579,12 @@ export default function BlueprintReport({ chart }: Props) {
     refresh: refreshUnlock,
   } = useReportUnlock(reportId, { reportType });
 
-
+  useEffect(() => {
+    if (isUnlocked) return;
+    if (reportText && !isPreviewReport500(reportText)) {
+      setReportText(loadPreviewReportText(reportType) || "");
+    }
+  }, [isUnlocked, reportType]);
 
   const previewText = useMemo(() => {
     const stored = loadPreviewReportText(reportType);

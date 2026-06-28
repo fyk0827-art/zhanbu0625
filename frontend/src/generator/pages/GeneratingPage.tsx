@@ -118,7 +118,10 @@ export default function GeneratingPage() {
     const { generateReportText } = await import("../services/reportGenerator");
     const preview = await import("../services/reportStore").then(m => m.loadPreviewReportText(reportType as any));
     try {
-      const aiText = await generateReportText(finalChart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
+      const aiText = await Promise.race([
+        generateReportText(finalChart, reportType as any, (c) => setCharCount(c), preview, i18n.language),
+        new Promise<string>((_, reject) => setTimeout(() => reject(new Error("AI generation timeout after 90s")), 90000))
+      ]);
       if (aiText.trim()) {
         saveReportText(aiText, reportType as any);
         markAiReportDone(reportType as any);

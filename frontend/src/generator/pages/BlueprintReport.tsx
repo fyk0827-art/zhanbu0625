@@ -1187,7 +1187,7 @@ export default function BlueprintReport({ chart }: Props) {
               className="w-full py-3 rounded-full font-bold text-white shadow-lg disabled:opacity-60"
               style={{ background: paymentLabels.buttonColor }}
             >
-              {paying ? paymentLabels.paying : `${paymentLabels.button} · ¥${effectivePrice}`}
+              {paying ? paymentLabels.paying : `${paymentLabels.button} · $${effectivePrice}`}
             </button>
           ) : (
             <button
@@ -1197,7 +1197,7 @@ export default function BlueprintReport({ chart }: Props) {
               className="w-full py-3 rounded-full font-bold text-white shadow-lg disabled:opacity-60"
               style={{ background: paymentLabels.buttonColor }}
             >
-              {paying ? paymentLabels.paying : `${paymentLabels.button} · ¥${effectivePrice}`}
+              {paying ? paymentLabels.paying : `${paymentLabels.button} · $${effectivePrice}`}
             </button>
           )}
         </div>
@@ -1338,7 +1338,7 @@ export default function BlueprintReport({ chart }: Props) {
                 className="w-full py-3.5 rounded-xl font-bold text-white disabled:opacity-50"
                 style={{ background: paymentLabels.buttonColor }}
               >
-                {paying ? paymentLabels.paying : `${paymentLabels.button} · ¥${effectivePrice}`}
+                {paying ? paymentLabels.paying : `${paymentLabels.button} · $${effectivePrice}`}
               </button>
             </div>
           ) : (

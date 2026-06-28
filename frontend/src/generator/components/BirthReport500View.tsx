@@ -352,7 +352,7 @@ export default function BirthReport500View({
             className="w-full py-3.5 rounded-full font-bold text-white shadow-lg disabled:opacity-60"
             style={{ background: paymentLabels.buttonColor }}
           >
-            {paying ? paymentLabels.paying : `${paymentLabels.button} · ¥${priceYuan || reportMeta.priceYuan}`}
+            {paying ? paymentLabels.paying : `${paymentLabels.button} · $${priceYuan || reportMeta.priceYuan}`}
           </button>
           <p className="text-[10px] text-white/45 text-center mt-2">{t("reportPreviewFree")}</p>
         </div>

@@ -67,7 +67,7 @@ payment:
 meta:
   pixel-id: 1000287272912455
   capi-access-token: ${META_CAPI_ACCESS_TOKEN:}
-  test-event-code: ""
+  test-event-code: ${META_TEST_EVENT_CODE:}
   product-name: "Full Life Blueprint Report"
   currency: "USD"
 

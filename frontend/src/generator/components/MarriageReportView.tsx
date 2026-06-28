@@ -297,7 +297,7 @@ export function MarriageReportView({
             className="w-full py-3 rounded-full font-bold text-white shadow-lg disabled:opacity-60"
             style={{ background: paymentButtonColor }}
           >
-            {paying ? paymentPayingLabel : `${paymentButtonLabel} · ¥${priceYuan || reportMeta.priceYuan}`}
+            {paying ? paymentPayingLabel : `${paymentButtonLabel} · $${priceYuan || reportMeta.priceYuan}`}
           </button>
         </div>
       )}

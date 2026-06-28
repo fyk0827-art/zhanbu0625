@@ -11,7 +11,7 @@ import {
   PAYMENT_DISABLED,
   type PaymentMode,
 } from "../services/paymentApi";
-import { trackEvent, getFbpCookie, getFbcCookie } from "../services/tracking";
+import { trackEvent, trackFbPurchase, getFbpCookie, getFbcCookie } from "../services/tracking";
 import type { ReportTypeId } from "../types/reportTypes";
 import {
   getRouterSearchParams,
@@ -106,6 +106,7 @@ export function useReportUnlock(
           try {
             await capturePayPalOrder(pendingOrderId, token);
             trackEvent("pay_success", true);
+            trackFbPurchase({ eventId: pendingOrderId, value: 0, currency: "USD" });
           } catch (e) {
             trackEvent("pay_fail", true);
             if (!cancelled) {
@@ -123,6 +124,7 @@ export function useReportUnlock(
             setOrderId(o.orderId);
             setPaidAt(o.paidAt ?? null);
             trackEvent("pay_success", true);
+            trackFbPurchase({ eventId: o.orderId, value: o.amount ? o.amount / 100 : 0, currency: "USD" });
             stripRouterPaymentParams();
             return;
           }
@@ -190,6 +192,7 @@ export function useReportUnlock(
           setIsUnlocked(true);
           setOrderId(paid.orderId);
           trackEvent("pay_success", true);
+          trackFbPurchase({ eventId: paid.orderId, value: 0, currency: "USD" });
           await refresh();
         }
         return;
@@ -216,6 +219,7 @@ export function useReportUnlock(
       if (result.unlocked) {
         setIsUnlocked(true);
         setOrderId(result.orderId);
+        trackFbPurchase({ eventId: orderId, value: 0, currency: "USD" });
         await refresh();
       }
     } catch (e) {

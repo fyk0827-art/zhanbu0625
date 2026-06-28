@@ -9,9 +9,9 @@ import { generateBirthReport500 } from "../services/birthReport500";
 import { getGlobalReportType, setGlobalReportType } from "../services/reportSession";
 import { savePreviewReportText, saveReportText, clearReportText, clearAiReportDone, saveReportId, saveBirthData } from "../services/reportStore";
 import { saveReportToServer } from "../services/reportApi";
-import { trackEvent, trackFbPurchase } from "../services/tracking";
-import { getRouterSearchParams } from "../utils/routerQuery";
-import { getOrderStatus } from "../services/paymentApi";
+import { trackEvent, trackFbPurchase, getFbpCookie, getFbcCookie } from "../services/tracking";
+import { getRouterSearchParams, stripRouterPaymentParams } from "../utils/routerQuery";
+import { getOrderStatus, capturePayPalOrder } from "../services/paymentApi";
 
 export default function GeneratingPage() {
   const { t, i18n } = useTranslation();
@@ -28,13 +28,16 @@ export default function GeneratingPage() {
     const orderId = params.get("orderId");
     const reportId = params.get("reportId");
     const reportType = (params.get("reportType") as any) || getGlobalReportType();
-    const isPaid = params.get("paid") === "1";
+    const token = params.get("token");
+    const isPaypalReturn = Boolean(orderId && token);
     const birthDataRaw = sessionStorage.getItem("taiji_birth_data");
     const birthData: BirthData | null = birthDataRaw ? JSON.parse(birthDataRaw) : null;
 
     setGlobalReportType(reportType);
 
-    if (isPaid && orderId && reportId) {
+    if (isPaypalReturn && orderId && token) {
+      handlePaypalCapture(orderId, token, reportId, reportType);
+    } else if (orderId && reportId) {
       handlePaidGeneration(orderId, reportId, reportType);
     } else if (birthData) {
       handlePreviewGeneration(birthData, reportType);
@@ -44,6 +47,61 @@ export default function GeneratingPage() {
       navigate("/generator", { replace: true });
     }
   }, []);
+
+  async function handlePaypalCapture(orderId: string, token: string, reportId: string | null, reportType: string) {
+    try {
+      setStatusText(t("confirmingPayment"));
+      const result = await capturePayPalOrder(orderId, token);
+      if (result.unlocked) {
+        trackFbPurchase({ eventId: orderId, value: 0, currency: "USD" });
+        trackEvent("pay_success", true);
+        if (reportId) {
+          await generateAiReport(reportId, reportType);
+        }
+        navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`, { replace: true });
+      } else {
+        navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`, { replace: true });
+      }
+    } catch (e) {
+      console.error("PayPal capture error:", e);
+      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId || "")}`, { replace: true });
+    }
+  }
+
+  async function handlePaidGeneration(orderId: string, reportId: string, reportType: string) {
+    try {
+      setStatusText(t("confirmingPayment"));
+      for (let i = 0; i < 30; i++) {
+        const status = await getOrderStatus(orderId).catch(() => null);
+        if (status?.unlocked || status?.status === "paid") {
+          trackFbPurchase({ eventId: orderId, value: status?.amount ? status.amount / 100 : 0, currency: "USD" });
+          await generateAiReport(reportId, reportType);
+          navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+          return;
+        }
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+    } catch (e) {
+      console.error("Error in paid generation:", e);
+      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
+    }
+  }
+
+  async function generateAiReport(reportId: string, reportType: string) {
+    setStatusText(t("aiGenerating"));
+    const chartRaw = sessionStorage.getItem("taiji_chart_json");
+    const chart: NatalChart | null = chartRaw ? JSON.parse(chartRaw) : null;
+    if (chart) {
+      const { generateReportText } = await import("../services/reportGenerator");
+      const preview = await import("../services/reportStore").then(m => m.loadPreviewReportText(reportType as any));
+      const aiText = await generateReportText(chart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
+      if (aiText.trim()) {
+        saveReportText(aiText, reportType as any);
+        trackEvent("report_success", true);
+      }
+    }
+  }
 
   async function handlePreviewGeneration(birthData: BirthData, reportType: string) {
     try {
@@ -59,7 +117,8 @@ export default function GeneratingPage() {
       savePreviewReportText(text, reportType as any);
       setCharCount(text.length);
 
-      const reportId = await import("../services/reportId").then(m => m.computeReportId(birthData, reportType as any));
+      const { computeReportId } = await import("../services/reportId");
+      const reportId = await computeReportId(birthData, reportType as any);
       saveReportId(reportId, reportType as any);
 
       await saveReportToServer({ reportId, reportText: text, chartJson: natalChart, displayName: birthData.name || undefined, reportType: reportType as any }).catch(() => {});
@@ -70,37 +129,6 @@ export default function GeneratingPage() {
       console.error("Error generating preview:", e);
       alert(t("genReportError", { message: msg }));
       navigate("/generator", { replace: true });
-    }
-  }
-
-  async function handlePaidGeneration(orderId: string, reportId: string, reportType: string) {
-    try {
-      setStatusText(t("confirmingPayment"));
-      for (let i = 0; i < 30; i++) {
-        const status = await getOrderStatus(orderId).catch(() => null);
-        if (status?.unlocked || status?.status === "paid") {
-          setStatusText(t("aiGenerating"));
-          const chartRaw = sessionStorage.getItem("taiji_chart_json");
-          const chart: NatalChart | null = chartRaw ? JSON.parse(chartRaw) : null;
-          if (chart) {
-            const { generateReportText } = await import("../services/reportGenerator");
-            const preview = await import("../services/reportStore").then(m => m.loadPreviewReportText(reportType as any));
-            trackFbPurchase({ eventId: orderId, value: (status as any).amount ? (status as any).amount / 100 : 0, currency: "USD" });
-            const aiText = await generateReportText(chart, reportType as any, (c) => setCharCount(c), preview, i18n.language);
-            if (aiText.trim()) {
-              saveReportText(aiText, reportType as any);
-              trackEvent("report_success", true);
-            }
-          }
-          navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
-          return;
-        }
-        await new Promise(r => setTimeout(r, 2000));
-      }
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
-    } catch (e) {
-      console.error("Error in paid generation:", e);
-      navigate(`/generator/final-report?reportType=${encodeURIComponent(reportType)}&reportId=${encodeURIComponent(reportId)}`, { replace: true });
     }
   }
 

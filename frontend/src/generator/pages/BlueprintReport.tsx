@@ -8,7 +8,7 @@ import {
 import type { NatalChart } from "../services/astrologyEngine";
 import { getGlobalReportText, setGlobalReportText, getGlobalReportType, getGlobalChart } from "../App";
 import { getReportTypeMeta, parseReportTypeId } from "../types/reportTypes";
-import { loadReportText, saveReportText, savePreviewReportText, loadReportId, saveReportId, loadBirthData, loadPreviewReportText, loadInitialReportText, clearAiReportDone, clearReportText, markAiReportDone } from "../services/reportStore";
+import { loadReportText, saveReportText, savePreviewReportText, loadReportId, saveReportId, loadBirthData, loadPreviewReportText, loadInitialReportText, clearAiReportDone, clearReportText, markAiReportDone, isAiReportDone } from "../services/reportStore";
 import { isPreviewReport500, generateBirthReport500, previewMatchesLocale } from "../services/birthReport500";
 import BirthReport500View from "../components/BirthReport500View";
 import { fetchReportFromServer, saveReportToServer } from "../services/reportApi";
@@ -624,12 +624,21 @@ export default function BlueprintReport({ chart }: Props) {
     });
   }, [i18n.language, activeChart, reportType]);
 
-  /** 兜底：isPaid 但无 AI 报告时重新生成 */
+  /** 兜底：isPaid 但无 AI 报告时重新生成（检查是否已生成过避免重复） */
   useEffect(() => {
     if (!activeChart || !isPaid || hasAiReport || autoGenRef.current) return;
     const preview = loadPreviewReportText(reportType)
       || (reportText && isPreviewReport500(reportText) ? reportText : "");
     if (!preview) return;
+    const existingAi = loadReportText(reportType);
+    if (existingAi && isAiReportDone(reportType)) {
+      if (!hasAiReport) setReportText(existingAi);
+      return;
+    }
+    if (sessionStorage.getItem("ai_gen_started")) {
+      const genStarted = parseInt(sessionStorage.getItem("ai_gen_started") || "0");
+      if (Date.now() - genStarted < 180000) return; // 仍在生成中（3分钟超时）
+    }
 
     autoGenRef.current = true;
     setGenerating(true);
@@ -650,6 +659,47 @@ export default function BlueprintReport({ chart }: Props) {
       })
       .finally(() => setGenerating(false));
   }, [activeChart, isPaid, reportType, i18n.language]);
+
+  /** 轮询检测：fire-and-forget 的 AI 生成完成后加载到页面（超时30s则自己生成） */
+  useEffect(() => {
+    if (!isPaid || hasAiReport || !activeChart) return;
+    const preview = loadPreviewReportText(reportType)
+      || (reportText && isPreviewReport500(reportText) ? reportText : "");
+    if (!preview) return;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += 1000;
+      const existingAi = loadReportText(reportType);
+      if (existingAi && isAiReportDone(reportType)) {
+        clearInterval(timer);
+        setReportText(existingAi);
+        return;
+      }
+      if (elapsed >= 30000 && !autoGenRef.current) {
+        clearInterval(timer);
+        sessionStorage.removeItem("ai_gen_started");
+        autoGenRef.current = true;
+        setGenerating(true);
+        setGenError(null);
+        generateReportText(activeChart, reportType, (text) => setGenCharCount(text.length), preview, i18n.language)
+          .then((text) => {
+            if (!text.trim()) throw new Error("AI report generation failed: no valid content received");
+            setReportText(text);
+            setGlobalReportText(text, reportType);
+            saveReportText(text, reportType);
+            markAiReportDone(reportType);
+            trackEvent("report_success", true);
+          })
+          .catch((e) => {
+            autoGenRef.current = false;
+            setGenError(e instanceof Error ? e.message : String(e));
+            trackEvent("report_fail", true);
+          })
+          .finally(() => setGenerating(false));
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isPaid, hasAiReport, reportType, i18n.language, activeChart, reportText]);
 
   /** 支付宝回跳后内存中无 chart，从服务器恢复（解锁后才有 chartJson / 全文） */
   // 每次 reportText 变化时清洗中文

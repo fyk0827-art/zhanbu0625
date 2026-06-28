@@ -34,10 +34,14 @@ export async function generateReportText(
   let received = "";
   let retries = 0;
   const maxRetries = 2;
+  const TOTAL_BUDGET_MS = 600000;
+  const startTime = Date.now();
 
   trackEvent("report_generating", true);
 
   while (retries <= maxRetries) {
+    const remaining = TOTAL_BUDGET_MS - (Date.now() - startTime);
+    if (remaining <= 0) throw new Error("AI report generation timeout");
     try {
       for await (const chunk of streamChat(s.apiKey, {
         model: s.model || "deepseek-v4-pro",
@@ -47,7 +51,7 @@ export async function generateReportText(
         ],
         max_tokens: Math.max(s.maxTokens || 8192, 16384),
         temperature: s.temperature ?? 0.1,
-      })) {
+      }, remaining)) {
         received += chunk;
         onChunk?.(received);
       }

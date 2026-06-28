@@ -105,6 +105,7 @@ export default function GeneratingPage() {
   }
 
   async function generateAiReport(reportId: string, reportType: string) {
+    sessionStorage.setItem("ai_gen_started", Date.now().toString());
     setStatusText(t("preparingReport"));
     const totalSec = 180 + Math.floor(Math.random() * 21);
     setCountdown(totalSec);
@@ -117,7 +118,10 @@ export default function GeneratingPage() {
     }, 100);
     const chart = await getChart();
     if (!chart) {
-      const serverData = await fetchReportFromServer(reportId).catch(() => null);
+      const ac = new AbortController();
+      const to = setTimeout(() => ac.abort(), 30000);
+      const serverData = await fetchReportFromServer(reportId, ac.signal).catch(() => null);
+      clearTimeout(to);
       if (serverData?.chartJson) {
         sessionStorage.setItem("taiji_chart_json", JSON.stringify(serverData.chartJson));
       }
@@ -137,6 +141,7 @@ export default function GeneratingPage() {
       console.error("AI generation error:", e);
     } finally {
       if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+      sessionStorage.removeItem("ai_gen_started");
     }
   }
 

@@ -19,7 +19,8 @@ const HARDCODED_API_KEY = "sk-9207a76a3a5f460796e9f437e16524ed";
 
 export async function* streamChat(
   apiKey: string,
-  request: ChatRequest
+  request: ChatRequest,
+  timeoutMs?: number
 ): AsyncGenerator<string, void, unknown> {
   const url = `${BASE_URL}/chat/completions`;
 
@@ -50,7 +51,8 @@ export async function* streamChat(
   let response: Response;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeout = timeoutMs ?? 600000;
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     response = await fetch(url, {
       method: "POST",
       headers: {

@@ -59,8 +59,8 @@ export async function saveReportToServer(params: {
 }
 
 /** 从服务器拉取报告（已付费时返回全文，可换设备恢复） */
-export async function fetchReportFromServer(reportId: string): Promise<FetchReportResponse | null> {
-  const res = await fetch(`${API_BASE}/api/reports/${encodeURIComponent(reportId)}`);
+export async function fetchReportFromServer(reportId: string, signal?: AbortSignal): Promise<FetchReportResponse | null> {
+  const res = await fetch(`${API_BASE}/api/reports/${encodeURIComponent(reportId)}`, { signal });
   if (res.status === 404) {
     return { reportId, hasReport: false, unlocked: false };
   }

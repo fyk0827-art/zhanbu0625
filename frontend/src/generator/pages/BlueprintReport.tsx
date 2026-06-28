@@ -542,11 +542,12 @@ export default function BlueprintReport({ chart }: Props) {
     // 比对指纹：如果用户换了邮箱/年龄/答题/出生数据，清除旧 AI 缓存
     const currentHash = sessionStorage.getItem("fp_hash");
     const storedHash = localStorage.getItem("fp_hash");
-    if (currentHash && storedHash && currentHash !== storedHash) {
-      console.log("[BPR] fingerprint changed, clearing cached AI report");
+    const hasAi = loadReportText(reportType) && isAiReportDone(reportType);
+    if (hasAi && currentHash && (!storedHash || currentHash !== storedHash)) {
+      console.log("[BPR] fingerprint changed or first visit with cached AI, clearing");
       clearReportText(reportType);
-      localStorage.setItem("fp_hash", currentHash);
-    } else if (currentHash) {
+    }
+    if (currentHash) {
       localStorage.setItem("fp_hash", currentHash);
     }
     return loadInitialReportText(reportType) || getGlobalReportText() || "";

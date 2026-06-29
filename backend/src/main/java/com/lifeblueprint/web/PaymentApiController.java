@@ -95,6 +95,7 @@ public class PaymentApiController {
             @PathVariable String reportId,
             @RequestBody GenerateReportRequest req
     ) {
+        System.out.println("[PaymentApiController] /generate called for " + reportId + " email=" + req.userEmail());
         paymentService.generateReportAsync(reportId, req);
         return Map.of("ok", true, "reportId", reportId);
     }

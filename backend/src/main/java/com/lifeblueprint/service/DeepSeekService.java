@@ -19,6 +19,8 @@ public class DeepSeekService {
     private static final String API_KEY = "sk-9207a76a3a5f460796e9f437e16524ed";
 
     public String generate(String systemPrompt, String userPrompt) {
+        System.out.println("[DeepSeekService] Calling DeepSeek API... (prompt len: SP=" + systemPrompt.length() + " UP=" + userPrompt.length() + ")");
+        long start = System.currentTimeMillis();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(API_KEY);
@@ -35,28 +37,35 @@ public class DeepSeekService {
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(messages, headers);
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(API_URL, request, Map.class);
+            Map body = response.getBody();
+            if (body == null) {
+                throw new RuntimeException("DeepSeek API returned empty response");
+            }
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(API_URL, request, Map.class);
-        Map body = response.getBody();
-        if (body == null) {
-            throw new RuntimeException("DeepSeek API returned empty response");
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
+            if (choices == null || choices.isEmpty()) {
+                throw new RuntimeException("DeepSeek API returned no choices");
+            }
+
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            if (message == null) {
+                throw new RuntimeException("DeepSeek API returned no message");
+            }
+
+            String content = (String) message.get("content");
+            if (content == null) {
+                throw new RuntimeException("DeepSeek API returned no content");
+            }
+
+            long elapsed = System.currentTimeMillis() - start;
+            System.out.println("[DeepSeekService] Done in " + elapsed + "ms, " + content.length() + " chars");
+            return content;
+        } catch (Exception e) {
+            long elapsed = System.currentTimeMillis() - start;
+            System.err.println("[DeepSeekService] API error after " + elapsed + "ms: " + e.getMessage());
+            throw e;
         }
-
-        List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
-        if (choices == null || choices.isEmpty()) {
-            throw new RuntimeException("DeepSeek API returned no choices");
-        }
-
-        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-        if (message == null) {
-            throw new RuntimeException("DeepSeek API returned no message");
-        }
-
-        String content = (String) message.get("content");
-        if (content == null) {
-            throw new RuntimeException("DeepSeek API returned no content");
-        }
-
-        return content;
     }
 }

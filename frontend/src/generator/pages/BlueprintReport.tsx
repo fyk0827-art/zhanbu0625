@@ -863,7 +863,7 @@ export default function BlueprintReport({ chart }: Props) {
     getRouterSearchParams().get("orderId") || getRouterSearchParams().get("out_trade_no");
   const isPaypalReturn = Boolean(paymentReturnOrderId && getRouterSearchParams().get("token"));
 
-  if (!activeChart) {
+  if (!activeChart && !hasAiReport) {
     const waitingPay =
       (Boolean(paymentReturnOrderId) || isPaypalReturn) &&
       (confirmingReturn || restoring || unlockLoading || (!isUnlocked && !pollExhausted));

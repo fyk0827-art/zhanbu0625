@@ -189,7 +189,7 @@ public class PaymentService {
         System.out.println("[PaymentService] Starting async gen for " + reportId);
         try {
             String chartJson = null;
-            if (req.chartJson() != null) {
+            if (req.chartJson() != null && !req.chartJson().isNull()) {
                 chartJson = objectMapper.writeValueAsString(req.chartJson());
             }
 

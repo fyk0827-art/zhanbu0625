@@ -27,7 +27,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom("divinlove100@gmail.com");
+            helper.setFrom("fyk827827@gmail.com");
             helper.setTo(to);
             helper.setSubject("Your Life Blueprint Report is Ready");
 
@@ -47,7 +47,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
-            helper.setFrom("divinlove100@gmail.com");
+            helper.setFrom("fyk827827@gmail.com");
             helper.setTo(to);
             helper.setSubject("PRISM - Test Email");
             helper.setText("This is a test email from PRISM Life Script.\n\nIf you received this, SMTP is working correctly.\n\nTimestamp: " + System.currentTimeMillis(), false);

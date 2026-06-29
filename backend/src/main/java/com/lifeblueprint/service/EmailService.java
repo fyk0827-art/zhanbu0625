@@ -31,7 +31,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("Your Life Blueprint Report is Ready");
 
-            String html = buildReportEmail(reportId, reportText, displayName);
+            String html = buildReportEmail(reportText, displayName);
             helper.setText(html, true);
 
             mailSender.send(message);
@@ -60,9 +60,10 @@ public class EmailService {
         }
     }
 
-    private String buildReportEmail(String reportId, String reportText, String displayName) {
+    private String buildReportEmail(String reportText, String displayName) {
         String name = displayName != null ? displayName : "Your Report";
         String reportHtml = reportText != null ? mdToHtml(reportText) : "";
+        String date = java.time.LocalDate.now().toString();
 
         return """
             <!DOCTYPE html>
@@ -70,42 +71,40 @@ public class EmailService {
             <head><meta charset="utf-8"/><style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #0D1B2A; color: #E8DCC8; padding: 0; }
-              .email-wrap { max-width: 680px; margin: 0 auto; background: #1A0F2E; }
-              .header { text-align: center; padding: 36px 32px 24px; border-bottom: 1px solid rgba(232,200,122,0.12); }
-              .header h1 { color: #E8C87A; font-size: 22px; margin: 0 0 6px; font-weight: 700; letter-spacing: 1px; }
-              .header p { color: rgba(232,220,200,0.45); font-size: 12px; margin: 0; }
-              .report-body { padding: 24px 32px 32px; font-size: 14px; line-height: 1.8; color: #E8DCC8; }
-              .report-body h1, .report-body h2, .report-body h3, .report-body h4 { color: #E8C87A; margin: 24px 0 12px; font-weight: 600; }
-              .report-body h1 { font-size: 20px; border-bottom: 1px solid rgba(232,200,122,0.12); padding-bottom: 8px; }
+              .email-wrap { max-width: 680px; margin: 0 auto; background: #1A0F2E; border-radius: 12px; overflow: hidden; }
+              .header { text-align: center; padding: 40px 32px 28px; background: linear-gradient(135deg, #2D1B4E 0%, #1A0F2E 100%); }
+              .header h1 { color: #E8C87A; font-size: 24px; margin: 0 0 6px; font-weight: 700; letter-spacing: 2px; }
+              .header p { color: rgba(232,220,200,0.5); font-size: 12px; margin: 0; }
+              .report-body { padding: 28px 32px; font-size: 14px; line-height: 1.8; color: #E8DCC8; }
+              .report-body h1, .report-body h2, .report-body h3, .report-body h4 { color: #E8C87A; margin: 28px 0 12px; font-weight: 600; }
+              .report-body h1 { font-size: 20px; border-bottom: 1px solid rgba(232,200,122,0.15); padding-bottom: 10px; }
               .report-body h2 { font-size: 17px; }
               .report-body h3 { font-size: 15px; }
               .report-body h4 { font-size: 14px; }
-              .report-body p { margin: 0 0 10px; color: #E8DCC8; }
+              .report-body p { margin: 0 0 12px; color: #E8DCC8; line-height: 1.8; }
               .report-body strong { color: #f0e6d3; font-weight: 600; }
-              .report-body ul, .report-body ol { margin: 0 0 10px 20px; color: #E8DCC8; }
-              .report-body li { margin-bottom: 4px; }
-              .report-body hr { border: none; border-top: 1px solid rgba(232,200,122,0.1); margin: 20px 0; }
-              .report-body blockquote { border-left: 3px solid #E8C87A; padding-left: 14px; margin: 10px 0; color: rgba(232,220,200,0.65); font-style: italic; }
-              .report-body code { background: rgba(232,200,122,0.08); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: #E8DCC8; }
-              .footer { text-align: center; padding: 24px 32px; border-top: 1px solid rgba(232,200,122,0.12); }
-              .footer p { font-size: 11px; color: rgba(232,220,200,0.3); margin: 0 0 4px; }
-              .footer a { color: #E8C87A; text-decoration: underline; font-size: 12px; }
+              .report-body ul, .report-body ol { margin: 0 0 12px 24px; color: #E8DCC8; }
+              .report-body li { margin-bottom: 6px; }
+              .report-body hr { border: none; border-top: 1px solid rgba(232,200,122,0.1); margin: 24px 0; }
+              .report-body blockquote { border-left: 3px solid #E8C87A; padding: 8px 16px; margin: 12px 0; color: rgba(232,220,200,0.65); font-style: italic; background: rgba(232,200,122,0.04); border-radius: 0 6px 6px 0; }
+              .report-body code { background: rgba(232,200,122,0.08); padding: 2px 8px; border-radius: 4px; font-size: 13px; color: #E8DCC8; }
+              .footer { text-align: center; padding: 20px 32px; border-top: 1px solid rgba(232,200,122,0.1); }
+              .footer p { font-size: 11px; color: rgba(232,220,200,0.25); margin: 0 0 2px; }
             </style></head>
             <body>
               <div class="email-wrap">
                 <div class="header">
                   <h1>Your Life Blueprint</h1>
-                  <p>%s</p>
+                  <p>%s · %s</p>
                 </div>
                 <div class="report-body">%s</div>
                 <div class="footer">
                   <p>Generated by PRISM Life Script &middot; Your personal astrology report</p>
-                   <p style="margin-top:4px"><a href="https://divinlove.com/generator/final-report?reportId=%s">View online &rarr;</a></p>
                 </div>
               </div>
             </body>
             </html>
-            """.formatted(name, reportHtml, reportId);
+            """.formatted(name, date, reportHtml);
     }
 
     private String mdToHtml(String md) {

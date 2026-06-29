@@ -132,19 +132,6 @@ public class PaymentService {
             }
         }
         repo.upsertReport(reportId, req.reportText(), chartJson, req.displayName());
-
-        // Send email if there's a paid order with a payer contact
-        List<OrderRecord> orders = repo.findOrdersByReportId(reportId);
-        for (OrderRecord order : orders) {
-            if (order.status() == OrderStatus.paid && order.payerContact() != null && !order.payerContact().isBlank()) {
-                try {
-                    emailService.sendReport(order.payerContact(), reportId, req.reportText(), req.displayName());
-                } catch (Exception e) {
-                    // Log but don't fail the request
-                }
-                break;
-            }
-        }
     }
 
     public Optional<Map<String, Object>> getReport(String reportId) {

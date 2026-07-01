@@ -207,7 +207,6 @@ export default function HomePage() {
               <span className="prism-font-serif text-[13px] font-semibold" style={{ color: "rgba(250,246,240,0.7)" }}>
                 {t("genBirthPlace")} <span style={{ color: "var(--prism-gold)" }}>*</span>
               </span>
-              <span className="text-[11px] italic" style={{ color: "rgba(232,185,81,0.35)" }}>{t("genOptional")}</span>
             </div>
             {useCustomCoords ? (
               <div className="flex gap-2 items-start">
